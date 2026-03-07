@@ -1,0 +1,46 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+/* Ensure DataTables components don't interfere with layout */
+.dataTables_wrapper {
+  position: relative;
+  z-index: 1;
+}
+
+.dataTables_length,
+.dataTables_filter,
+.dataTables_info,
+.dataTables_paginate {
+  position: relative;
+  z-index: 2;
+}
+
+/* Prevent DataTables from creating floating elements */
+.dataTables_wrapper .row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Ensure table container doesn't overflow and affect layout */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Force main content to stay within bounds */
+main {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}

@@ -1,0 +1,35 @@
+﻿@page
+@model FMStatsApp.Pages.FormationSelecterModel
+@{
+    ViewData["Title"] = "Select Formation";
+}
+
+<div class="container px-4 py-4" id="list-of-quotes">
+    <h2 class="pb-2 border-bottom">List of famous quotes</h2>
+
+    <p>Below are some famous quotes about love, work and the fact that tomorrow is another day. Select one that your friend likes.</p>
+    <form class="needs-validation" method="post" novalidate>
+        <div class="row mb-2 text-center">
+            <div class="col-md-10 themed-grid-col">
+                <label for="formationName" class="form-label">Dropdown Single Select</label>
+                <select class="form-select" asp-for="SelectedFormationName" asp-items="Model.AvailableFormations"></select>
+            </div>
+            <div class="col-md-2 themed-grid-col">
+                <button class="btn btn-success btn-sm" type="submit">Submit</button>
+            </div>
+        </div>
+    </form>
+    <div class="row mb-2 text-center">
+        <div class="col-md-10 themed-grid-head-col">
+            Selected items
+        </div>
+    </div>
+    @if (Model.SelectedFormation != null)
+    {
+        <div class="row mb-2 text-center">
+            <div class="col-md-10 themed-grid-col">
+                @Model.SelectedFormation?.Name
+            </div>
+        </div>
+    }
+</div>

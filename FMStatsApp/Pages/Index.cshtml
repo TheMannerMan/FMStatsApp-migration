@@ -1,0 +1,108 @@
+@page
+@model FMStatsApp.Pages.IndexModel
+@{
+    ViewData["Title"] = "FMStatsApp - Home";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="card-title mb-0">
+                        <i class="fas fa-upload me-2"></i>
+                        Welcome to FMStatsApp
+                    </h2>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            @Model.SuccessMessage
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            @Model.ErrorMessage
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    @if (Model.HasExistingPlayers)
+                    {
+                        <div class="alert alert-info" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Players already loaded!</strong> 
+                            You currently have <strong>@Model.ExistingPlayersCount</strong> players loaded in your session.
+                            <div class="mt-2">
+                                <a href="/DisplayPlayers" class="btn btn-outline-primary btn-sm me-2">
+                                    <i class="fas fa-users me-1"></i>View Players
+                                </a>
+                                <a href="/FormationSelecter" class="btn btn-outline-success btn-sm">
+                                    <i class="fas fa-chess-board me-1"></i>Formation Selector
+                                </a>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="mb-4">
+                        <h4>Upload Football Manager Player Data</h4>
+                        <p class="text-muted">
+                            Upload an HTML export file from Football Manager to analyze your players' statistics and find the best formations and roles.
+                        </p>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="UploadedFile" class="form-label">
+                                <strong>Select HTML File</strong>
+                            </label>
+                            <input class="form-control" type="file" id="UploadedFile" name="UploadedFile" 
+                                   accept=".html,.htm" required>
+                            <div class="form-text">
+                                Please select an HTML file exported from Football Manager (.html or .htm files only)
+                            </div>
+                            <span asp-validation-for="UploadedFile" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-upload me-2"></i>
+                                @if (Model.HasExistingPlayers)
+                                {
+                                    <text>Upload New File</text>
+                                }
+                                else
+                                {
+                                    <text>Upload File</text>
+                                }
+                            </button>
+                        </div>
+                    </form>
+
+                    @if (!Model.HasExistingPlayers)
+                    {
+                        <div class="mt-4">
+                            <h5>How to export player data from Football Manager:</h5>
+                            <ol class="small text-muted">
+                                <li>In Football Manager, go to Squad ? View ? Players</li>
+                                <li>Customize the view to include the attributes you want to analyze</li>
+                                <li>Right-click and select "Export View" ? "Web Page"</li>
+                                <li>Save the HTML file and upload it here</li>
+                            </ol>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

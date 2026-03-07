@@ -1,0 +1,3 @@
+﻿2025-02-02
+Någonstans blir det fel med Parsing. Värdena för Role blir null.
+Undersök i HTMLParser vad som kan vara orsaken.

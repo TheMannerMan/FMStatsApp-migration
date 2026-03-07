@@ -1,0 +1,378 @@
+﻿@page
+@using FMStatsApp.Models
+@model DisplayPlayersModel
+@{
+    ViewData["Title"] = "Players";
+}
+
+@if (TempData["FormationMessage"] != null)
+{
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        @TempData["FormationMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3><i class="fas fa-users me-2"></i>Players (@Model.Players.Count)</h3>
+    <div>
+        <a href="/Index" class="btn btn-outline-secondary">
+            <i class="fas fa-upload me-1"></i>Upload New File
+        </a>
+    </div>
+</div>
+
+<!-- Main Filter Accordion -->
+<div class="accordion mb-4" id="mainFilterAccordion">
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="filterHeading">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" 
+                    data-bs-target="#filterCollapse" aria-expanded="true" aria-controls="filterCollapse">
+                <i class="fas fa-filter me-2"></i>
+                <strong>Filter by Roles</strong>
+                @if (Model.SelectedRolesToList.Any())
+                {
+                    <span class="badge bg-info ms-2">@Model.SelectedRolesToList.Count selected</span>
+                }
+            </button>
+        </h2>
+        <div id="filterCollapse" class="accordion-collapse collapse show" aria-labelledby="filterHeading" data-bs-parent="#mainFilterAccordion">
+            <div class="accordion-body">
+                <!-- Search Box -->
+                <div class="mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="roleSearch" placeholder="Search for roles..." />
+                        <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <form method="post" id="roleFilterForm">
+                    <input asp-for="Players" value="@Model.Players" type="hidden">
+                    
+                    <!-- Control Buttons -->
+                    <div class="text-center mb-3">
+                        <button class="btn btn-success me-2" type="submit">
+                            <i class="fas fa-filter me-1"></i>Apply Filters
+                        </button>
+                        <button class="btn btn-secondary me-2" type="button" onclick="clearAllFilters()">
+                            <i class="fas fa-times me-1"></i>Clear All
+                        </button>
+                        <button class="btn btn-outline-primary" type="button" onclick="selectAllFilters()">
+                            <i class="fas fa-check-double me-1"></i>Select All
+                        </button>
+                    </div>
+
+                    <!-- Accordion for Role Categories -->
+                    <div class="accordion" id="roleAccordion">
+                        
+                        <!-- Goalkeeper Roles -->
+                        <div class="accordion-item" data-role-category="goalkeeper">
+                            <h2 class="accordion-header" id="goalkeeperHeading">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#goalkeeperCollapse" aria-expanded="false" aria-controls="goalkeeperCollapse">
+                                    <i class="fas fa-glove me-2 text-success"></i>
+                                    <strong>Goalkeeper Roles</strong>
+                                    <span class="badge bg-success ms-2">@Model.GoalkeeperRoles.Count</span>
+                                </button>
+                            </h2>
+                            <div id="goalkeeperCollapse" class="accordion-collapse collapse" aria-labelledby="goalkeeperHeading" data-bs-parent="#roleAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        @foreach (var role in Model.GoalkeeperRoles)
+                                        {
+                                            <div class="col-md-4 col-sm-6 mb-2 role-item" data-role-name="@role.ToLower()">
+                                                <div class="form-check">
+                                                    <input type="checkbox" class="form-check-input" id="gk-@role" name="SelectedRolesToList" value="@role" 
+                                                           checked="@(Model.SelectedRolesToList.Contains(role) ? "checked" : null)">
+                                                    <label class="form-check-label" for="gk-@role">@role</label>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Defender Roles -->
+                        <div class="accordion-item" data-role-category="defender">
+                            <h2 class="accordion-header" id="defenderHeading">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#defenderCollapse" aria-expanded="false" aria-controls="defenderCollapse">
+                                    <i class="fas fa-shield-alt me-2 text-primary"></i>
+                                    <strong>Defender Roles</strong>
+                                    <span class="badge bg-primary ms-2">@Model.DefenderRoles.Count</span>
+                                </button>
+                            </h2>
+                            <div id="defenderCollapse" class="accordion-collapse collapse" aria-labelledby="defenderHeading" data-bs-parent="#roleAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        @foreach (var role in Model.DefenderRoles)
+                                        {
+                                            <div class="col-md-4 col-sm-6 mb-2 role-item" data-role-name="@role.ToLower()">
+                                                <div class="form-check">
+                                                    <input type="checkbox" class="form-check-input" id="def-@role" name="SelectedRolesToList" value="@role" 
+                                                           checked="@(Model.SelectedRolesToList.Contains(role) ? "checked" : null)">
+                                                    <label class="form-check-label" for="def-@role">@role</label>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Midfielder Roles -->
+                        <div class="accordion-item" data-role-category="midfielder">
+                            <h2 class="accordion-header" id="midfielderHeading">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#midfielderCollapse" aria-expanded="false" aria-controls="midfielderCollapse">
+                                    <i class="fas fa-cog me-2 text-warning"></i>
+                                    <strong>Midfielder Roles</strong>
+                                    <span class="badge bg-warning text-dark ms-2">@Model.MidfielderRoles.Count</span>
+                                </button>
+                            </h2>
+                            <div id="midfielderCollapse" class="accordion-collapse collapse" aria-labelledby="midfielderHeading" data-bs-parent="#roleAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        @foreach (var role in Model.MidfielderRoles)
+                                        {
+                                            <div class="col-md-4 col-sm-6 mb-2 role-item" data-role-name="@role.ToLower()">
+                                                <div class="form-check">
+                                                    <input type="checkbox" class="form-check-input" id="mid-@role" name="SelectedRolesToList" value="@role" 
+                                                           checked="@(Model.SelectedRolesToList.Contains(role) ? "checked" : null)">
+                                                    <label class="form-check-label" for="mid-@role">@role</label>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Forward Roles -->
+                        <div class="accordion-item" data-role-category="forward">
+                            <h2 class="accordion-header" id="forwardHeading">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#forwardCollapse" aria-expanded="false" aria-controls="forwardCollapse">
+                                    <i class="fas fa-futbol me-2 text-danger"></i>
+                                    <strong>Forward Roles</strong>
+                                    <span class="badge bg-danger ms-2">@Model.ForwardRoles.Count</span>
+                                </button>
+                            </h2>
+                            <div id="forwardCollapse" class="accordion-collapse collapse" aria-labelledby="forwardHeading" data-bs-parent="#roleAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        @foreach (var role in Model.ForwardRoles)
+                                        {
+                                            <div class="col-md-4 col-sm-6 mb-2 role-item" data-role-name="@role.ToLower()">
+                                                <div class="form-check">
+                                                    <input type="checkbox" class="form-check-input" id="fwd-@role" name="SelectedRolesToList" value="@role" 
+                                                           checked="@(Model.SelectedRolesToList.Contains(role) ? "checked" : null)">
+                                                    <label class="form-check-label" for="fwd-@role">@role</label>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.SelectedRolesToList.Any())
+{
+    <div class="alert alert-info mb-4">
+        <h6>Currently Selected Roles (@Model.SelectedRolesToList.Count):</h6>
+        @foreach (var role in Model.SelectedRolesToList.OrderBy(r => r))
+        {
+            <span class="badge bg-primary me-1 mb-1">@role</span>
+        }
+    </div>
+}
+
+<!-- Player List at the Bottom -->
+@if (Model.Players.Any())
+{
+    <div class="card mb-5">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>Player List
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <!-- DataTable wrapper with proper containment -->
+            <div class="table-responsive" style="position: relative; z-index: 1;">
+                <table id="playerInfoTable" class="table table-striped table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>Position</th>
+                            <th>Nationality</th>
+                            @foreach (var role in Model.SelectedRolesToList)
+                            {
+                                <th>@role</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var player in Model.Players)
+                        {
+                            <tr>
+                                <td><strong>@player.Name</strong></td>
+                                <td>@player.Age</td>
+                                <td>@player.Position</td>
+                                <td>@player.Nationality</td>
+                                @foreach (var role in Model.SelectedRolesToList)
+                                {
+                                    var roleData = player.Roles.FirstOrDefault(r => r.RoleName == role);
+                                    <td>
+                                        @if (roleData != null)
+                                        {
+                                            <span class="badge @GetScoreBadgeClass(roleData.RoleScore)">
+                                                @roleData.RoleScore.ToString("N1")
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">N/A</span>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Clear any potential floating elements -->
+    <div class="clearfix"></div>
+}
+
+@functions {
+    private string GetScoreBadgeClass(float score)
+    {
+        if (score >= 15) return "bg-success text-white";
+        if (score >= 12) return "bg-warning text-dark";
+        if (score >= 10) return "bg-info text-white";
+        return "bg-secondary text-white";
+    }
+}
+
+@section Scripts {
+    <script>
+        function clearAllFilters() {
+            document.querySelectorAll('input[type="checkbox"][name="SelectedRolesToList"]').forEach(function(checkbox) {
+                checkbox.checked = false;
+            });
+        }
+
+        function selectAllFilters() {
+            document.querySelectorAll('input[type="checkbox"][name="SelectedRolesToList"]').forEach(function(checkbox) {
+                checkbox.checked = true;
+            });
+        }
+
+        function clearSearch() {
+            document.getElementById('roleSearch').value = '';
+            filterRoles();
+        }
+
+        function filterRoles() {
+            const searchTerm = document.getElementById('roleSearch').value.toLowerCase();
+            const roleItems = document.querySelectorAll('.role-item');
+            const accordionItems = document.querySelectorAll('#roleAccordion .accordion-item');
+            
+            // Reset all visibility
+            roleItems.forEach(item => {
+                item.style.display = 'block';
+            });
+            
+            accordionItems.forEach(item => {
+                item.style.display = 'block';
+            });
+
+            if (searchTerm === '') {
+                return; // Show all if search is empty
+            }
+
+            // Filter role items
+            roleItems.forEach(item => {
+                const roleName = item.getAttribute('data-role-name');
+                if (!roleName.includes(searchTerm)) {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Hide accordion sections that have no visible roles
+            accordionItems.forEach(item => {
+                const visibleRoles = item.querySelectorAll('.role-item[style="display: block"], .role-item:not([style*="display: none"])');
+                if (visibleRoles.length === 0) {
+                    item.style.display = 'none';
+                } else {
+                    // Auto-expand sections with matching results
+                    const collapseElement = item.querySelector('.accordion-collapse');
+                    const button = item.querySelector('.accordion-button');
+                    if (collapseElement && button) {
+                        if (!collapseElement.classList.contains('show')) {
+                            button.click();
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize search functionality
+        $(document).ready(function() {
+            // Bind search input
+            $('#roleSearch').on('input', function() {
+                filterRoles();
+            });
+
+            // Wait for DOM to be fully ready before initializing DataTable
+            setTimeout(function() {
+                // Initialize DataTable with proper cleanup and containment
+                if ($.fn.DataTable.isDataTable('#playerInfoTable')) {
+                    $('#playerInfoTable').DataTable().destroy();
+                }
+                
+                $('#playerInfoTable').DataTable({
+                    responsive: true,
+                    pageLength: 25,
+                    order: [[0, 'asc']], // Sort by name by default
+                    columnDefs: [
+                        { targets: '_all', className: 'text-center' },
+                        { targets: [0], className: 'text-start' } // Keep name left-aligned
+                    ],
+                    language: {
+                        search: "Search players:",
+                        lengthMenu: "Show _MENU_ players per page",
+                        info: "Showing _START_ to _END_ of _TOTAL_ players",
+                        emptyTable: "No players available"
+                    },
+                    // Prevent DataTables from moving DOM elements outside the container
+                    dom: '<"d-flex justify-content-between mb-3"lf>rt<"d-flex justify-content-between mt-3"ip>',
+                    // Ensure proper initialization
+                    deferRender: true,
+                    // Prevent any layout interference
+                    autoWidth: false,
+                    // Keep table contained within its wrapper
+                    scrollCollapse: false
+                });
+            }, 100);
+        });
+    </script>
+}
