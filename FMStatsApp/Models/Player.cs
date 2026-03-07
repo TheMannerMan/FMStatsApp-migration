@@ -99,13 +99,14 @@ namespace FMStatsApp.Models
 				var match = Regex.Match(transferValueString, @"(\d+(\.\d+)?)\s*[MK]");
 				if (!match.Success) return 0;
 
-				// Parse the value and convert to euros
+				// Parse the value and convert to euros using the suffix of the matched number
 				double value = double.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
-				if (transferValueString.Contains("M"))
+				char suffix = match.Value[match.Value.Length - 1];
+				if (suffix == 'M')
 				{
 					value *= 1_000_000;
 				}
-				else if (transferValueString.Contains("K"))
+				else if (suffix == 'K')
 				{
 					value *= 1_000;
 				}

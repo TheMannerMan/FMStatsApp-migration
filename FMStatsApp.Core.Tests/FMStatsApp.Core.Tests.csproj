@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit" Version="2.9.*" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.*" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FMStatsApp\FMStatsApp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\TestData\squad-export.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>TestData\squad-export.html</Link>
+    </Content>
+  </ItemGroup>
+
+</Project>
