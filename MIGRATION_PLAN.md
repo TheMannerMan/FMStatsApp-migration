@@ -1,46 +1,46 @@
-# FMStatsApp Migrationsplan: Razor Pages → Angular + .NET Web API
+# FMStatsApp Migration Plan: Razor Pages → Angular + .NET Web API
 
-## Kontext
+## Context
 
-FMStatsApp är en webbapplikation för Football Manager 2026. Användaren laddar upp en HTML-export från spelet, applikationen parsar spelardata (57 kolumner), beräknar poäng för 85 roller med viktade attribut, och visar resultaten i en sorterbar/filtrerbar tabell.
+FMStatsApp is a web application for Football Manager 2026. Users upload an HTML export from the game, the application parses player data (57 columns), calculates scores for 85 roles with weighted attributes, and displays the results in a sortable/filterable table.
 
-Idag är appen byggd som en ASP.NET Core 8.0 Razor Pages-app (server-side rendering med Bootstrap, jQuery, DataTables). Målet är att migrera till **Angular frontend + .NET Web API backend** — stegvis, med möjlighet att backa vid varje steg.
+Today, the app is built as an ASP.NET Core 8.0 Razor Pages app (server-side rendering with Bootstrap, jQuery, DataTables). The goal is to migrate to **Angular frontend + .NET Web API backend** — incrementally, with the ability to roll back at each step.
 
-**Kärnkravet:** Beräkningslogiken (ScoringCalculator + RoleCatalog) MÅSTE ge identiska resultat efter migrering.
+**Core requirement:** The calculation logic (ScoringCalculator + RoleCatalog) MUST produce identical results after migration.
 
 ---
 
-## Arkitektur
+## Architecture
 
-### Hur Angular + .NET kopplas ihop
+### How Angular + .NET are connected
 
 ```
 [Angular SPA]  ---HTTP/JSON--->  [.NET Web API]
    port 4200                        port 5000
 ```
 
-- Angular skickar HTTP-requests till RESTful API-endpoints
-- Under utveckling: Angular dev-server proxar `/api/*` till .NET-backenden
-- I produktion: .NET serverar Angulars kompilerade filer från `wwwroot` (en enda deployment)
-- **Stateless API** — ingen session. Backenden tar emot fil, parsar, returnerar JSON. Angular håller all data i minnet
+- Angular sends HTTP requests to RESTful API endpoints
+- During development: Angular dev server proxies `/api/*` to the .NET backend
+- In production: .NET serves Angular's compiled files from `wwwroot` (single deployment)
+- **Stateless API** — no session. Backend receives file, parses it, returns JSON. Angular holds all data in memory
 
-### Projektstruktur (mono-repo)
+### Project structure (mono-repo)
 
 ```
 FMStatsApp_migration/
 ├── FMStatsApp.sln
-├── FMStatsApp/                  # Original Razor Pages-app (behålls för jämförelse/rollback)
-├── FMStatsApp.Api/              # Ny .NET 8 Web API
+├── FMStatsApp/                  # Original Razor Pages app (kept for comparison/rollback)
+├── FMStatsApp.Api/              # New .NET 8 Web API
 │   ├── Controllers/
 │   │   ├── PlayersController.cs   # POST /api/players/upload
 │   │   └── RolesController.cs     # GET /api/roles
-│   ├── Models/                    # Flyttas från original (oförändrad logik)
-│   └── Services/                  # Flyttas från original (oförändrad logik)
-├── FMStatsApp.Core.Tests/       # xUnit testprojekt
+│   ├── Models/                    # Moved from original (unchanged logic)
+│   └── Services/                  # Moved from original (unchanged logic)
+├── FMStatsApp.Core.Tests/       # xUnit test project
 │   ├── ScoringCalculatorTests.cs
 │   ├── HtmlParserTests.cs
 │   └── PlayerParserTests.cs
-└── fm-stats-angular/            # Angular-app
+└── fm-stats-angular/            # Angular app
     └── src/app/
         ├── services/
         ├── models/
@@ -52,57 +52,57 @@ FMStatsApp_migration/
 
 ---
 
-## Verktyg & Teknologival
+## Tools & Technology Choices
 
-| Område | Val | Motivering |
-|--------|-----|------------|
-| **Backend** | .NET 10 Web API med Controllers | Senaste LTS-versionen, nytt projekt byggs från grunden |
-| **Frontend** | Angular 19 (senaste stabila) | Standalone components, signals, modern DX |
-| **UI-komponentbibliotek** | Bestäms i Steg 2 | PrimeNG (bra tabell-komponent) eller Angular Material — vi väljer det som passar bäst när vi bygger UI |
-| **State management** | Angular services + signals | Enkel app, en datamängd (spelarlistan). Inget NgRx behövs |
-| **HTTP** | Angular HttpClient | Inbyggt, hanterar filuppladdning och JSON |
-| **Backend-tester** | xUnit | Standard för .NET |
-| **Frontend-tester** | Jasmine/Karma (Angular default) | Tillräckligt för denna appstorlek |
-| **HTML-parsning** | HtmlAgilityPack (befintlig) | Fungerar bra, ingen anledning att byta |
-
----
-
-## Migreringssteg
-
-### Steg 0: Skriv tester för kärnlogiken (säkerhetsnät)
-
-**Vad görs:**
-- Skapa `FMStatsApp.Core.Tests` xUnit-projekt
-- Tester för `ScoringCalculator.AddRoleScoring` — skapa Player med kända attributvärden, verifiera exakta poäng
-- Tester för `PlayerParser.ParseWage` och `ParseTransferValue`
-- Tester för `HtmlParser` med en liten HTML-testfil som fixture
-- "Golden master": Kör nuvarande appen med en testfil, spara komplett JSON-output som referens
-
-**Vad är oförändrat:** Allt. Ingen ändring i befintlig app.
-
-**Verifiering:** Alla tester passerar.
-
-**Rollback:** Ta bort testprojektet.
+| Area | Choice | Rationale |
+|------|--------|-----------|
+| **Backend** | .NET 10 Web API with Controllers | Latest LTS version, new project built from scratch |
+| **Frontend** | Angular 19 (latest stable) | Standalone components, signals, modern DX |
+| **UI component library** | Determined in Step 2 | PrimeNG (good table component) or Angular Material — we choose what fits best when we build the UI |
+| **State management** | Angular services + signals | Simple app, one data set (player list). No NgRx needed |
+| **HTTP** | Angular HttpClient | Built-in, handles file upload and JSON |
+| **Backend tests** | xUnit | Standard for .NET |
+| **Frontend tests** | Jasmine/Karma (Angular default) | Sufficient for this app size |
+| **HTML parsing** | HtmlAgilityPack (existing) | Works well, no reason to change |
 
 ---
 
-### Steg 1: Skapa .NET Web API-projektet
+## Migration Steps
 
-**Vad görs:**
-- Skapa `FMStatsApp.Api` i solutionen
-- Flytta/kopiera Models och Services från Razor Pages-appen (oförändrad logik)
-- Skapa `PlayersController`: `POST /api/players/upload` — tar emot fil, kör parser + scorer, returnerar `List<Player>` som JSON
-- Skapa `RolesController`: `GET /api/roles` — returnerar rollkatalog grupperad per position
-- Konfigurera CORS för Angular dev-server
-- Peka testprojektet mot API-projektets kod
+### Step 0: Write tests for core logic (safety net)
 
-**Vad är oförändrat:** Originala Razor Pages-appen fungerar fortfarande.
+**What is done:**
+- Create `FMStatsApp.Core.Tests` xUnit project
+- Tests for `ScoringCalculator.AddRoleScoring` — create Player with known attribute values, verify exact scores
+- Tests for `PlayerParser.ParseWage` and `ParseTransferValue`
+- Tests for `HtmlParser` with a small HTML test file as fixture
+- "Golden master": Run current app with a test file, save complete JSON output as reference
 
-**Verifiering:** Swagger UI eller curl — ladda upp HTML-fil, se JSON-svar. Jämför poäng med Razor-appen. Tester passerar fortfarande.
+**What is unchanged:** Everything. No changes to existing app.
 
-**Rollback:** Ta bort API-projektet.
+**Verification:** All tests pass.
 
-**Nyckelfiler att flytta:**
+**Rollback:** Delete the test project.
+
+---
+
+### Step 1: Create .NET Web API project
+
+**What is done:**
+- Create `FMStatsApp.Api` in the solution
+- Move/copy Models and Services from Razor Pages app (unchanged logic)
+- Create `PlayersController`: `POST /api/players/upload` — receives file, runs parser + scorer, returns `List<Player>` as JSON
+- Create `RolesController`: `GET /api/roles` — returns role catalog grouped by position
+- Configure CORS for Angular dev server
+- Point test project to API project code
+
+**What is unchanged:** Original Razor Pages app still works.
+
+**Verification:** Swagger UI or curl — upload HTML file, see JSON response. Compare scores with Razor app. Tests still pass.
+
+**Rollback:** Delete the API project.
+
+**Key files to move:**
 - `FMStatsApp/Services/HtmlParser.cs`
 - `FMStatsApp/Services/ScoringCalculator.cs`
 - `FMStatsApp/Services/RoleService.cs`
@@ -113,66 +113,66 @@ FMStatsApp_migration/
 
 ---
 
-### Steg 2: Skapa Angular-appen (uppladdning + visning)
+### Step 2: Create Angular app (upload + display)
 
-**Vad görs:**
-- Scaffolda Angular-app med `ng new`
-- Bygga kärnkomponenter:
-  - **Upload-komponent** — filväljare, skickar till API, navigerar till tabell
-  - **Player table-komponent** — sorterbar tabell med spelardata och rollpoäng
-  - **Role filter-komponent** — kryssrutor grupperade per position, styr vilka rollkolumner som visas
-- Player-service som anropar API:et och håller data i en signal
-- Proxy-config för utveckling (`/api/*` → .NET backend)
+**What is done:**
+- Scaffold Angular app with `ng new`
+- Build core components:
+  - **Upload component** — file picker, sends to API, navigates to table
+  - **Player table component** — sortable table with player data and role scores
+  - **Role filter component** — checkboxes grouped by position, controls which role columns are shown
+- Player service that calls the API and holds data in a signal
+- Proxy config for development (`/api/*` → .NET backend)
 
-**Vad är oförändrat:** .NET API:et (Steg 1) oförändrat. Razor Pages-appen fungerar fortfarande.
+**What is unchanged:** .NET API (Step 1) unchanged. Razor Pages app still works.
 
-**Verifiering:** Ladda upp samma HTML-fil i båda apparna. Jämför:
-- Antal spelare
-- Spelarattribut
-- Rollpoäng (stickprov 5-10 spelare)
-- Sortering fungerar
-- Rollfiltrering visar/döljer rätt kolumner
+**Verification:** Upload same HTML file in both apps. Compare:
+- Number of players
+- Player attributes
+- Role scores (sample 5-10 players)
+- Sorting works
+- Role filtering shows/hides correct columns
 
-**Rollback:** Ta bort Angular-mappen.
-
----
-
-### Steg 3: Polering och produktionssättning
-
-**Vad görs:**
-- Konfigurera .NET API att serva Angulars build-output från `wwwroot`
-- Felhantering på båda sidor
-- Design och styling (väljs separat — behöver inte vara Bootstrap)
-- Loading-indikator vid uppladdning
-
-**Verifiering:** End-to-end-test med riktiga FM-exportfiler.
-
-**Rollback:** Återgå till Steg 2 (separat körning).
+**Rollback:** Delete the Angular folder.
 
 ---
 
-### Steg 4: Städa bort legacy-projektet
+### Step 3: Polish and deployment
 
-**Vad görs:**
-- Ta bort det gamla `FMStatsApp/` Razor Pages-projektet från solutionen och filsystemet
-- Säkerställ att alla tester fortfarande pekar mot `FMStatsApp.Api` (bör redan vara fallet efter Steg 1)
-- Rensa eventuella oanvända beroenden i solutionen
+**What is done:**
+- Configure .NET API to serve Angular's build output from `wwwroot`
+- Error handling on both sides
+- Design and styling (chosen separately — doesn't have to be Bootstrap)
+- Loading indicator during upload
 
-**Förutsättning:** Angular-appen är verifierad och ger identiska resultat som den gamla appen.
+**Verification:** End-to-end test with real FM export files.
 
-**Rollback:** Återskapa via git history.
-
----
-
-### Steg 5 (framtid): Formationsfunktion och ytterligare features
-
-Skjuts upp tills grunderna är på plats. `Formation.cs` och `RoleService.cs` finns redan i API-projektet och är redo att byggas ut.
+**Rollback:** Return to Step 2 (separate execution).
 
 ---
 
-## Teststrategi för beräkningskorrekthet
+### Step 4: Clean up legacy project
 
-1. **Invariant-test:** Spelare med alla attribut = 10 → alla rollpoäng = exakt 10.0
-2. **Kända värden:** Spelare med specifika attribut → manuellt beräknade förväntade poäng
-3. **Golden master:** Spara komplett output från nuvarande app som JSON, jämför mot API-output fält för fält
-4. **Float-precision:** API:et beräknar med `float`. Angular visar bara — räknar aldrig om. Avrundning till 1 decimal vid visning (samma som idag)
+**What is done:**
+- Remove the old `FMStatsApp/` Razor Pages project from the solution and file system
+- Ensure all tests still point to `FMStatsApp.Api` (should already be the case after Step 1)
+- Clean up any unused dependencies in the solution
+
+**Prerequisite:** Angular app is verified and produces identical results as the old app.
+
+**Rollback:** Recreate via git history.
+
+---
+
+### Step 5 (future): Formation feature and additional features
+
+Postponed until the basics are in place. `Formation.cs` and `RoleService.cs` already exist in the API project and are ready to be developed.
+
+---
+
+## Test strategy for calculation correctness
+
+1. **Invariant test:** Player with all attributes = 10 → all role scores = exactly 10.0
+2. **Known values:** Player with specific attributes → manually calculated expected scores
+3. **Golden master:** Save complete output from current app as JSON, compare against API output field by field
+4. **Float precision:** API calculates with `float`. Angular displays only — never recalculates. Rounding to 1 decimal on display (same as today)
