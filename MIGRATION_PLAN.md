@@ -30,7 +30,7 @@ Today, the app is built as an ASP.NET Core 8.0 Razor Pages app (server-side rend
 FMStatsApp_migration/
 ├── FMStatsApp.sln
 ├── FMStatsApp/                  # Original Razor Pages app (kept for comparison/rollback)
-├── FMStatsApp.Api/              # New .NET 8 Web API
+├── FMStatsApp.Api/              # New .NET 10 Web API
 │   ├── Controllers/
 │   │   ├── PlayersController.cs   # POST /api/players/upload
 │   │   └── RolesController.cs     # GET /api/roles
