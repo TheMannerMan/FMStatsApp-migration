@@ -16,7 +16,7 @@ public class HtmlParserTests
     [Fact]
     public void ParsedPlayers_ValidFixture_ReturnsNonEmptyList()
     {
-        var parser = new HtmlParser();
+        var parser = new HtmlParser(new ScoringCalculator());
         using var stream = File.OpenRead(FixturePath);
 
         var players = parser.ParsedPlayers(stream);
@@ -29,7 +29,7 @@ public class HtmlParserTests
     public void ParsedPlayers_ValidFixture_Returns9Players()
     {
         // The fixture has 10 <tr> rows; the first is the header (skipped), leaving 9 players.
-        var parser = new HtmlParser();
+        var parser = new HtmlParser(new ScoringCalculator());
         using var stream = File.OpenRead(FixturePath);
 
         var players = parser.ParsedPlayers(stream);
@@ -40,7 +40,7 @@ public class HtmlParserTests
     [Fact]
     public void ParsedPlayers_ValidFixture_AllPlayersHave85Roles()
     {
-        var parser = new HtmlParser();
+        var parser = new HtmlParser(new ScoringCalculator());
         using var stream = File.OpenRead(FixturePath);
 
         var players = parser.ParsedPlayers(stream);
@@ -55,7 +55,7 @@ public class HtmlParserTests
     [Fact]
     public void ParsedPlayers_ValidFixture_PlayerNamesAreNotEmpty()
     {
-        var parser = new HtmlParser();
+        var parser = new HtmlParser(new ScoringCalculator());
         using var stream = File.OpenRead(FixturePath);
 
         var players = parser.ParsedPlayers(stream);
@@ -67,7 +67,7 @@ public class HtmlParserTests
     [Fact]
     public void ParsedPlayers_EmptyStream_ReturnsEmptyList()
     {
-        var parser = new HtmlParser();
+        var parser = new HtmlParser(new ScoringCalculator());
         using var stream = new MemoryStream();
 
         var players = parser.ParsedPlayers(stream);
@@ -79,7 +79,7 @@ public class HtmlParserTests
     [Fact]
     public void ParsedPlayers_HtmlWithNoTableRows_ReturnsEmptyList()
     {
-        var parser = new HtmlParser();
+        var parser = new HtmlParser(new ScoringCalculator());
         const string html = "<html><body><table></table></body></html>";
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(html));
 
@@ -103,7 +103,7 @@ public class HtmlParserTests
     [Fact]
     public void ParsedPlayers_FirstPlayer_HasCorrectMetadata()
     {
-        var parser = new HtmlParser();
+        var parser = new HtmlParser(new ScoringCalculator());
         using var stream = File.OpenRead(FixturePath);
 
         var players = parser.ParsedPlayers(stream);
@@ -128,7 +128,7 @@ public class HtmlParserTests
     public void ParsedPlayers_FirstPlayer_HasCorrectAttributes()
     {
         // Verified against squad-export.html row 2, columns [15]-[53]
-        var parser = new HtmlParser();
+        var parser = new HtmlParser(new ScoringCalculator());
         using var stream = File.OpenRead(FixturePath);
 
         var players = parser.ParsedPlayers(stream);
@@ -187,7 +187,7 @@ public class HtmlParserTests
         // 2*1 + 3*3 + 15*5 + 12*1 + 1*3 + 6*3 + 8*1 + 4*3 + 9*0 + 2*3 + 11*3 + 3*5 + 2*5 + 3*1
         // = 2 + 9 + 75 + 12 + 3 + 18 + 8 + 12 + 0 + 6 + 33 + 15 + 10 + 3 = 206
         // score = 206 / 37 ≈ 5.567
-        var parser = new HtmlParser();
+        var parser = new HtmlParser(new ScoringCalculator());
         using var stream = File.OpenRead(FixturePath);
 
         var players = parser.ParsedPlayers(stream);
