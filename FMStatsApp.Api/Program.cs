@@ -1,21 +1,39 @@
+using FMStatsApp.Api.Repositories;
+using FMStatsApp.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// Domain services
+builder.Services.AddScoped<ScoringCalculator>();
+builder.Services.AddScoped<HtmlParser>();
+
+// Repository — swap InMemoryPlayerRepository for a DB implementation here in a future step
+builder.Services.AddScoped<IPlayerRepository, InMemoryPlayerRepository>();
+
+// CORS: allow Angular dev server
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AngularDev", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
-app.UseAuthorization();
-
+app.UseCors("AngularDev"); // Must be before MapControllers
 app.MapControllers();
 
 app.Run();
