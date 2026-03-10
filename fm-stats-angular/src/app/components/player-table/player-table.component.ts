@@ -4,11 +4,12 @@ import { RouterLink } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { PlayerService } from '../../services/player.service';
 import { Player } from '../../models/player.model';
+import { RoleFilterComponent } from '../role-filter/role-filter.component';
 
 @Component({
   selector: 'app-player-table',
   standalone: true,
-  imports: [CommonModule, RouterLink, TableModule],
+  imports: [CommonModule, RouterLink, TableModule, RoleFilterComponent],
   templateUrl: './player-table.component.html',
   styleUrl: './player-table.component.scss'
 })
@@ -26,11 +27,12 @@ export class PlayerTableComponent implements OnInit {
     { field: 'averageRating', header: 'Rating' },
   ];
 
-  // Computed: derive role columns from the first player's roles
+  // Computed: derive role columns from the first player's roles, filtered by activeRoles
   roleColumns = computed(() => {
     const players = this.playerService.players();
     if (players.length === 0) return [];
-    return players[0].roles;
+    const activeRoles = this.playerService.activeRoles();
+    return players[0].roles.filter(r => activeRoles.has(r.shortRoleName));
   });
 
   ngOnInit(): void {

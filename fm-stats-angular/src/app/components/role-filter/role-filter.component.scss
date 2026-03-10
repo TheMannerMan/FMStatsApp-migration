@@ -1,0 +1,39 @@
+.role-filter {
+  padding: 1rem;
+  border-right: 1px solid #dee2e6;
+  min-width: 200px;
+  max-height: 600px;
+  overflow-y: auto;
+
+  h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+}
+
+.position-group {
+  margin-bottom: 1rem;
+}
+
+.group-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.role-list {
+  padding-left: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.role-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+}

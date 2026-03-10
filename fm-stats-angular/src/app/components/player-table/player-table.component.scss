@@ -1,3 +1,14 @@
+.players-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.table-wrapper {
+  flex: 1;
+  overflow: auto;
+}
+
 .table-container {
   padding: 1rem;
   overflow-x: auto;
