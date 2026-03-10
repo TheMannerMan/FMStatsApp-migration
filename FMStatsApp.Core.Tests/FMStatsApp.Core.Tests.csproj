@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FMStatsApp\FMStatsApp.csproj" />
+    <ProjectReference Include="..\FMStatsApp.Api\FMStatsApp.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>
