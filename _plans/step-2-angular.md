@@ -1,5 +1,7 @@
 # Step 2 Plan: Create Angular App (Upload + Display)
 
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan sub-step-by-sub-step.
+
 ## Context
 
 Step 1 is complete: the .NET 10 Web API is running with two endpoints:
@@ -44,6 +46,7 @@ npm install primeng @primeuix/themes
 ```
 
 **Result:** `fm-stats-angular/` directory is created and `ng serve` starts without errors on port 4200.
+Expected: `Application bundle generation complete.` and `Local: http://localhost:4200/`
 
 **Why this is its own step:** Scaffolding generates many files. Keeping it isolated makes it easy to verify before adding any code.
 
@@ -80,6 +83,7 @@ git commit -m "feat: scaffold Angular app with PrimeNG"
 ```
 
 **Verification:** `ng serve` still starts. No code changes needed to verify — we'll test actual requests in 2.4.
+Expected: `Application bundle generation complete.` and `Local: http://localhost:4200/`
 
 **Commit:**
 ```bash
@@ -133,6 +137,7 @@ export interface RoleGroup {
 ```
 
 **Verification:** `ng build` compiles without TypeScript errors.
+Expected: `Application bundle generation complete. 0 errors.`
 
 **Commit:**
 ```bash
