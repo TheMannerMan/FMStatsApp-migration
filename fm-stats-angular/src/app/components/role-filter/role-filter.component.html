@@ -7,7 +7,7 @@
         type="checkbox"
         [checked]="group.allChecked"
         [indeterminate]="group.indeterminate"
-        (change)="toggleGroup(group.groupName, $any($event.target).checked)"
+        (change)="onGroupChange(group.groupName, $event)"
       />
       <strong>{{ group.groupName }}</strong>
     </label>
@@ -17,7 +17,7 @@
         <input
           type="checkbox"
           [checked]="playerService.activeRoles().has(role.shortRoleName)"
-          (change)="toggleRole(role.shortRoleName, $any($event.target).checked)"
+          (change)="onRoleChange(role.shortRoleName, $event)"
         />
         {{ role.shortRoleName }}
       </label>

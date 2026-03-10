@@ -17,9 +17,9 @@
           {{ col.header }}
           <p-sortIcon [field]="col.field" />
         </th>
-        <th *ngFor="let role of roleColumns()" [pSortableColumn]="role.shortRoleName">
-          {{ role.shortRoleName }}
-        </th>
+        @for (role of roleColumns(); track role.shortRoleName) {
+          <th [pSortableColumn]="role.shortRoleName">{{ role.shortRoleName }}</th>
+        }
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-player>
@@ -27,14 +27,15 @@
         <td *ngFor="let col of basicColumns">
           {{ player[col.field] }}
         </td>
-        <td *ngFor="let role of roleColumns()" [ngClass]="getRoleScoreClass(getRoleScore(player, role.shortRoleName))">
-          {{ getRoleScore(player, role.shortRoleName) | number:'1.1-1' }}
-        </td>
+        @for (role of roleColumns(); track role.shortRoleName) {
+          @let score = getRoleScore(player, role.shortRoleName);
+          <td [ngClass]="getRoleScoreClass(score)">{{ score | number:'1.1-1' }}</td>
+        }
       </tr>
     </ng-template>
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td [attr.colspan]="basicColumns.length">
+        <td [attr.colspan]="basicColumns.length + roleColumns().length">
           No players loaded. <a routerLink="/upload">Upload an FM export</a> to get started.
         </td>
       </tr>

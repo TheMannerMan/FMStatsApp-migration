@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, computed } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TableModule } from 'primeng/table';
@@ -13,8 +13,8 @@ import { RoleFilterComponent } from '../role-filter/role-filter.component';
   templateUrl: './player-table.component.html',
   styleUrl: './player-table.component.scss'
 })
-export class PlayerTableComponent implements OnInit {
-  playerService = inject(PlayerService);
+export class PlayerTableComponent {
+  protected playerService = inject(PlayerService);
 
   basicColumns = [
     { field: 'name', header: 'Name' },
@@ -34,10 +34,6 @@ export class PlayerTableComponent implements OnInit {
     const activeRoles = this.playerService.activeRoles();
     return players[0].roles.filter(r => activeRoles.has(r.shortRoleName));
   });
-
-  ngOnInit(): void {
-    this.playerService.loadRoles();
-  }
 
   getRoleScore(player: Player, roleName: string): number {
     return player.roles.find(r => r.shortRoleName === roleName)?.roleScore ?? 0;

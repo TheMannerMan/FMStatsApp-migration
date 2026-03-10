@@ -10,7 +10,7 @@ import { PlayerService } from '../../services/player.service';
   styleUrl: './role-filter.component.scss'
 })
 export class RoleFilterComponent {
-  playerService = inject(PlayerService);
+  protected playerService = inject(PlayerService);
 
   // Get the grouped roles from the service
   roleGroups = computed(() => {
@@ -25,6 +25,14 @@ export class RoleFilterComponent {
                      !roleList.every(r => this.playerService.activeRoles().has(r.shortRoleName))
     }));
   });
+
+  onGroupChange(groupName: string, event: Event): void {
+    this.toggleGroup(groupName, (event.target as HTMLInputElement).checked);
+  }
+
+  onRoleChange(shortRoleName: string, event: Event): void {
+    this.toggleRole(shortRoleName, (event.target as HTMLInputElement).checked);
+  }
 
   toggleGroup(groupName: string, checked: boolean): void {
     const roles = this.playerService.roles();

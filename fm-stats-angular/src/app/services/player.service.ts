@@ -22,13 +22,17 @@ export class PlayerService {
   }
 
   loadRoles(): void {
-    this.http.get<RoleGroup>('/api/roles').subscribe(roles => {
-      this.roles.set(roles);
-      // Initialize activeRoles with all role short names
-      const allRoleNames = Object.values(roles)
-        .flat()
-        .map(r => r.shortRoleName);
-      this.activeRoles.set(new Set(allRoleNames));
+    this.http.get<RoleGroup>('/api/roles').subscribe({
+      next: (roles) => {
+        this.roles.set(roles);
+        const allRoleNames = Object.values(roles)
+          .flat()
+          .map(r => r.shortRoleName);
+        this.activeRoles.set(new Set(allRoleNames));
+      },
+      error: (err) => {
+        console.error('Failed to load roles:', err);
+      }
     });
   }
 }
