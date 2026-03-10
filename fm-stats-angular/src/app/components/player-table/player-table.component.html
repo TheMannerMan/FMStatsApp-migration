@@ -14,12 +14,18 @@
           {{ col.header }}
           <p-sortIcon [field]="col.field" />
         </th>
+        <th *ngFor="let role of roleColumns()" [pSortableColumn]="role.shortRoleName">
+          {{ role.shortRoleName }}
+        </th>
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-player>
       <tr>
         <td *ngFor="let col of basicColumns">
           {{ player[col.field] }}
+        </td>
+        <td *ngFor="let role of roleColumns()" [ngClass]="getRoleScoreClass(getRoleScore(player, role.shortRoleName))">
+          {{ getRoleScore(player, role.shortRoleName) | number:'1.1-1' }}
         </td>
       </tr>
     </ng-template>
