@@ -47,6 +47,12 @@ npm install primeng @primeuix/themes
 
 **Why this is its own step:** Scaffolding generates many files. Keeping it isolated makes it easy to verify before adding any code.
 
+**Commit:**
+```bash
+git add fm-stats-angular/
+git commit -m "feat: scaffold Angular app with PrimeNG"
+```
+
 ---
 
 ### 2.2 — Configure the Dev Proxy
@@ -74,6 +80,12 @@ npm install primeng @primeuix/themes
 ```
 
 **Verification:** `ng serve` still starts. No code changes needed to verify — we'll test actual requests in 2.4.
+
+**Commit:**
+```bash
+git add fm-stats-angular/proxy.conf.json fm-stats-angular/angular.json
+git commit -m "feat: configure Angular dev proxy for API"
+```
 
 ---
 
@@ -122,6 +134,12 @@ export interface RoleGroup {
 
 **Verification:** `ng build` compiles without TypeScript errors.
 
+**Commit:**
+```bash
+git add fm-stats-angular/src/app/models/
+git commit -m "feat: add TypeScript models for Player and RoleGroup"
+```
+
 ---
 
 ### 2.4 — Create PlayerService
@@ -144,6 +162,12 @@ Key methods:
 
 **Verification:** Service can be injected in a component. No visual verification needed yet.
 
+**Commit:**
+```bash
+git add fm-stats-angular/src/app/services/ fm-stats-angular/src/app/app.config.ts
+git commit -m "feat: add PlayerService with upload and roles signals"
+```
+
 ---
 
 ### 2.5 — Set Up App Routing
@@ -160,6 +184,12 @@ Routes:
 **Files to edit:** `fm-stats-angular/src/app/app.routes.ts`
 
 **Verification:** Navigating to `http://localhost:4200/upload` shows a placeholder, navigating to `/players` shows another placeholder.
+
+**Commit:**
+```bash
+git add fm-stats-angular/src/app/app.routes.ts
+git commit -m "feat: set up app routing with upload and players routes"
+```
 
 ---
 
@@ -191,6 +221,12 @@ Component logic:
 4. Should navigate to `/players` (blank for now is fine)
 5. Check browser DevTools Network tab — should see `POST /api/players/upload` returning 200 with player JSON
 
+**Commit:**
+```bash
+git add fm-stats-angular/src/app/components/upload/
+git commit -m "feat: add UploadComponent with file input and API integration"
+```
+
 ---
 
 ### 2.7 — Build the Player Table Component (Basic Columns)
@@ -215,6 +251,12 @@ PrimeNG component to use: `<p-table>` with:
 2. Should see a table with player rows
 3. Clicking column headers should sort
 
+**Commit:**
+```bash
+git add fm-stats-angular/src/app/components/player-table/
+git commit -m "feat: add PlayerTableComponent with basic columns"
+```
+
 ---
 
 ### 2.8 — Add Role Score Columns
@@ -233,6 +275,12 @@ PrimeNG component to use: `<p-table>` with:
 1. Upload test file
 2. Table should show 85+ role columns after the basic columns
 3. Scores should match what Swagger returned from the API directly
+
+**Commit:**
+```bash
+git add fm-stats-angular/src/app/components/player-table/
+git commit -m "feat: add role score columns with color-coding to player table"
+```
 
 ---
 
@@ -254,6 +302,12 @@ Logic:
 1. Uncheck "Goalkeeper" group → GK columns disappear from table
 2. Re-check → columns reappear
 3. No page reload needed (reactive)
+
+**Commit:**
+```bash
+git add fm-stats-angular/src/app/components/role-filter/
+git commit -m "feat: add RoleFilterComponent with position group checkboxes"
+```
 
 ---
 
