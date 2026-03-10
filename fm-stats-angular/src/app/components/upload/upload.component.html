@@ -1,0 +1,25 @@
+<div class="upload-container">
+  <h1>FM Stats - Upload Export</h1>
+  <p>Select your Football Manager HTML export file to view player statistics.</p>
+
+  <div class="upload-form">
+    <input
+      type="file"
+      accept=".html"
+      (change)="onFileSelected($event)"
+      [disabled]="isLoading"
+    />
+
+    <button
+      (click)="onUpload()"
+      [disabled]="!selectedFile || isLoading"
+    >
+      <span *ngIf="!isLoading">Upload</span>
+      <span *ngIf="isLoading">Loading...</span>
+    </button>
+  </div>
+
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+</div>
