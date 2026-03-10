@@ -86,7 +86,7 @@ FMStatsApp_migration/
 
 ---
 
-### Step 1: Create .NET Web API project
+### Step 1: Create .NET Web API project ✅ DONE
 
 **What is done:**
 - Create `FMStatsApp.Api` in the solution
@@ -102,6 +102,10 @@ FMStatsApp_migration/
 
 **Rollback:** Delete the API project.
 
+**Notes for Step 2:**
+- `HtmlParser` in `FMStatsApp.Api` now uses constructor injection: `HtmlParser(ScoringCalculator scoringCalculator)`. Angular sends files via `FormData` to `POST /api/players/upload` which uses `IFormFile` — no changes needed to the API when wiring up Angular.
+- `Swashbuckle.AspNetCore` was added manually — .NET 10 templates no longer include it by default.
+
 **Key files to move:**
 - `FMStatsApp/Services/HtmlParser.cs`
 - `FMStatsApp/Services/ScoringCalculator.cs`
@@ -112,6 +116,8 @@ FMStatsApp_migration/
 - `FMStatsApp/Models/Formation.cs`
 
 ---
+
+
 
 ### Step 2: Create Angular app (upload + display)
 
