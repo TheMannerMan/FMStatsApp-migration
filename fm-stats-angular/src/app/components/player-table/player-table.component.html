@@ -1,0 +1,34 @@
+<div class="table-container">
+  <p-table
+    [value]="playerService.players()"
+    sortMode="single"
+    [scrollable]="true"
+    scrollHeight="600px"
+    [virtualScroll]="true"
+    [virtualScrollItemSize]="48"
+    styleClass="p-datatable-sm"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th *ngFor="let col of basicColumns" [pSortableColumn]="col.field">
+          {{ col.header }}
+          <p-sortIcon [field]="col.field" />
+        </th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-player>
+      <tr>
+        <td *ngFor="let col of basicColumns">
+          {{ player[col.field] }}
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td [attr.colspan]="basicColumns.length">
+          No players loaded. <a routerLink="/upload">Upload an FM export</a> to get started.
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
