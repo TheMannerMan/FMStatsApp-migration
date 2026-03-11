@@ -1,0 +1,67 @@
+export interface Role {
+  roleName: string;
+  shortRoleName: string;
+  position: string;
+  roleScore: number;
+}
+
+export interface Player {
+  roles: Role[];
+  reg: string;
+  inf: string;
+  name: string;
+  age: number;
+  wage: number;
+  transferValue: number;
+  nationality: string;
+  secondNationality: string;
+  position: string;
+  personality: string;
+  mediaHandling: string;
+  averageRating: number;
+  leftFoot: string;
+  rightFoot: string;
+  height: number;
+  oneVsOne: number;
+  acceleration: number;
+  aerialAbility: number;
+  aggression: number;
+  agility: number;
+  anticipation: number;
+  balance: number;
+  bravery: number;
+  commandOfArea: number;
+  concentration: number;
+  composure: number;
+  crossing: number;
+  decisions: number;
+  determination: number;
+  dribbling: number;
+  finishing: number;
+  firstTouch: number;
+  flair: number;
+  handling: number;
+  heading: number;
+  jumpingReach: number;
+  kicking: number;
+  leadership: number;
+  longShots: number;
+  marking: number;
+  offTheBall: number;
+  pace: number;
+  passing: number;
+  positioning: number;
+  reflexes: number;
+  stamina: number;
+  strength: number;
+  tackling: number;
+  teamwork: number;
+  technique: number;
+  throwing: number;
+  throwOuts: number;
+  vision: number;
+  workRate: number;
+  uid: number;
+  corners: number;
+  club: string;
+}

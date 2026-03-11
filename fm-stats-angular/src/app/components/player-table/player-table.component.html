@@ -1,0 +1,46 @@
+<div class="players-layout">
+  <app-role-filter />
+  <div class="table-wrapper">
+<div class="table-container">
+  <p-table
+    [value]="playerService.players()"
+    sortMode="single"
+    [scrollable]="true"
+    scrollHeight="600px"
+    [virtualScroll]="true"
+    [virtualScrollItemSize]="48"
+    styleClass="p-datatable-sm"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th *ngFor="let col of basicColumns" [pSortableColumn]="col.field">
+          {{ col.header }}
+          <p-sortIcon [field]="col.field" />
+        </th>
+        @for (role of roleColumns(); track role.shortRoleName) {
+          <th [pSortableColumn]="role.shortRoleName">{{ role.shortRoleName }}</th>
+        }
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-player>
+      <tr>
+        <td *ngFor="let col of basicColumns">
+          {{ player[col.field] }}
+        </td>
+        @for (role of roleColumns(); track role.shortRoleName) {
+          @let score = getRoleScore(player, role.shortRoleName);
+          <td [ngClass]="getRoleScoreClass(score)">{{ score | number:'1.1-1' }}</td>
+        }
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td [attr.colspan]="basicColumns.length + roleColumns().length">
+          No players loaded. <a routerLink="/upload">Upload an FM export</a> to get started.
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+  </div>
+</div>
