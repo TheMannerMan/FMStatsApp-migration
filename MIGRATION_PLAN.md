@@ -143,7 +143,7 @@ FMStatsApp_migration/
 
 ---
 
-### Step 3: Polish and deployment
+### Step 3: Polish and deployment ✅ DONE
 
 **What is done:**
 - Configure .NET API to serve Angular's build output from `wwwroot`
@@ -154,6 +154,11 @@ FMStatsApp_migration/
 **Verification:** End-to-end test with real FM export files.
 
 **Rollback:** Return to Step 2 (separate execution).
+
+**Notes for Step 4:**
+- Angular build output goes to `FMStatsApp.Api/wwwroot/` (gitignored). Run `npm run build` from `fm-stats-angular/` before deploying.
+- PrimeNG Aura theme configured via `providePrimeNG` in `app.config.ts` — no CSS imports needed.
+- API returns structured `{ message }` JSON on errors; Angular's `err.error?.message` reads this.
 
 ---
 
