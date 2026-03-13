@@ -33,7 +33,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("AngularDev"); // Must be before MapControllers
-app.MapControllers();
+app.UseCors("AngularDev");
+app.UseStaticFiles();                    // Serves Angular files from wwwroot/
+app.MapControllers();                    // /api/* routes
+app.MapFallbackToFile("index.html");     // All other routes → Angular router
 
 app.Run();

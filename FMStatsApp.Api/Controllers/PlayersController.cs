@@ -22,13 +22,24 @@ public class PlayersController : ControllerBase
     public async Task<ActionResult<List<Player>>> Upload(IFormFile file)
     {
         if (file == null || file.Length == 0)
-            return BadRequest("No file provided.");
+            return BadRequest(new { message = "No file provided." });
 
         if (!file.FileName.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
-            return BadRequest("File must be an HTML file.");
+            return BadRequest(new { message = "File must be an HTML file." });
 
-        using var stream = file.OpenReadStream();
-        var players = _htmlParser.ParsedPlayers(stream);
+        List<Player> players;
+        try
+        {
+            using var stream = file.OpenReadStream();
+            players = _htmlParser.ParsedPlayers(stream);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = $"Failed to parse file: {ex.Message}" });
+        }
+
+        if (players.Count == 0)
+            return UnprocessableEntity(new { message = "No players found. Make sure you upload an FM squad HTML export." });
 
         await _playerRepository.SaveAsync(players);
 
