@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(cmd /c \"npx ctx7 skills info /anthropics/skills 2>&1\")",
+      "WebFetch(domain:context7.com)"
+    ]
+  }
+}
