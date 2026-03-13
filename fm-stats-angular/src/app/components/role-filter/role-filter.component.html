@@ -1,26 +1,53 @@
-<div class="role-filter">
-  <h3>Filter Role Columns</h3>
+<ng-template #filterContent>
+  @for (group of roleGroups(); track group.groupName) {
+    <p-panel styleClass="role-group-panel" [toggleable]="false">
+      <ng-template #header>
+        <div class="group-header">
+          <p-checkbox
+            [binary]="true"
+            [ngModel]="group.allChecked"
+            [indeterminate]="group.indeterminate"
+            (onChange)="onGroupChange(group.groupName, $event)"
+            [ariaLabel]="group.groupName"
+          />
+          <strong>{{ group.groupName }}</strong>
+        </div>
+      </ng-template>
+      <div class="role-list">
+        @for (role of group.roles; track role.shortRoleName) {
+          <div class="role-item">
+            <p-checkbox
+              [binary]="true"
+              [ngModel]="playerService.activeRoles().has(role.shortRoleName)"
+              (onChange)="onRoleChange(role.shortRoleName, $event)"
+              [inputId]="role.shortRoleName"
+              [ariaLabel]="role.shortRoleName"
+            />
+            <label [for]="role.shortRoleName" class="role-label">{{ role.shortRoleName }}</label>
+          </div>
+        }
+      </div>
+    </p-panel>
+  }
+</ng-template>
 
-  <div *ngFor="let group of roleGroups()" class="position-group">
-    <label class="group-label">
-      <input
-        type="checkbox"
-        [checked]="group.allChecked"
-        [indeterminate]="group.indeterminate"
-        (change)="onGroupChange(group.groupName, $event)"
-      />
-      <strong>{{ group.groupName }}</strong>
-    </label>
-
-    <div class="role-list">
-      <label *ngFor="let role of group.roles" class="role-label">
-        <input
-          type="checkbox"
-          [checked]="playerService.activeRoles().has(role.shortRoleName)"
-          (change)="onRoleChange(role.shortRoleName, $event)"
-        />
-        {{ role.shortRoleName }}
-      </label>
-    </div>
-  </div>
+<!-- Desktop: inline sidebar -->
+<div class="role-filter-sidebar">
+  <h3>Filter Roles</h3>
+  <ng-container [ngTemplateOutlet]="filterContent" />
 </div>
+
+<!-- Mobile: floating toggle button + drawer -->
+<button class="mobile-filter-toggle" (click)="toggleDrawer()" aria-label="Open role filter">
+  <span class="pi pi-filter"></span> Filters
+</button>
+
+<p-drawer
+  [visible]="drawerVisible"
+  (onHide)="drawerVisible = false"
+  header="Filter Roles"
+  position="left"
+  styleClass="role-filter-drawer"
+>
+  <ng-container [ngTemplateOutlet]="filterContent" />
+</p-drawer>

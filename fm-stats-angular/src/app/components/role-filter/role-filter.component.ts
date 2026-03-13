@@ -1,62 +1,60 @@
 import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { CheckboxModule, CheckboxChangeEvent } from 'primeng/checkbox';
+import { PanelModule } from 'primeng/panel';
+import { DrawerModule } from 'primeng/drawer';
+import { ButtonModule } from 'primeng/button';
 import { PlayerService } from '../../services/player.service';
 
 @Component({
   selector: 'app-role-filter',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule, CheckboxModule, PanelModule, DrawerModule, ButtonModule],
   templateUrl: './role-filter.component.html',
   styleUrl: './role-filter.component.scss'
 })
 export class RoleFilterComponent {
   protected playerService = inject(PlayerService);
 
-  // Get the grouped roles from the service
+  drawerVisible = false;
+
   roleGroups = computed(() => {
     const roles = this.playerService.roles();
     return Object.entries(roles).map(([groupName, roleList]) => ({
       groupName,
       roles: roleList,
-      // A group is "checked" if ALL its roles are in activeRoles
       allChecked: roleList.every(r => this.playerService.activeRoles().has(r.shortRoleName)),
-      // A group is "indeterminate" if SOME (but not all) roles are in activeRoles
       indeterminate: roleList.some(r => this.playerService.activeRoles().has(r.shortRoleName)) &&
                      !roleList.every(r => this.playerService.activeRoles().has(r.shortRoleName))
     }));
   });
 
-  onGroupChange(groupName: string, event: Event): void {
-    this.toggleGroup(groupName, (event.target as HTMLInputElement).checked);
+  toggleDrawer(): void {
+    this.drawerVisible = !this.drawerVisible;
   }
 
-  onRoleChange(shortRoleName: string, event: Event): void {
-    this.toggleRole(shortRoleName, (event.target as HTMLInputElement).checked);
+  onGroupChange(groupName: string, event: CheckboxChangeEvent): void {
+    this.toggleGroup(groupName, !!event.checked);
+  }
+
+  onRoleChange(shortRoleName: string, event: CheckboxChangeEvent): void {
+    this.toggleRole(shortRoleName, !!event.checked);
   }
 
   toggleGroup(groupName: string, checked: boolean): void {
     const roles = this.playerService.roles();
     const groupRoles = roles[groupName] ?? [];
     const current = new Set(this.playerService.activeRoles());
-
     for (const role of groupRoles) {
-      if (checked) {
-        current.add(role.shortRoleName);
-      } else {
-        current.delete(role.shortRoleName);
-      }
+      checked ? current.add(role.shortRoleName) : current.delete(role.shortRoleName);
     }
-
     this.playerService.activeRoles.set(current);
   }
 
   toggleRole(shortRoleName: string, checked: boolean): void {
     const current = new Set(this.playerService.activeRoles());
-    if (checked) {
-      current.add(shortRoleName);
-    } else {
-      current.delete(shortRoleName);
-    }
+    checked ? current.add(shortRoleName) : current.delete(shortRoleName);
     this.playerService.activeRoles.set(current);
   }
 }
