@@ -8,16 +8,16 @@ The Angular application currently has a minimal, unstyled appearance — plain H
 
 ## Open Questions
 > These questions must be answered before implementation can begin.
-- Should the app have a persistent app-shell (topbar/sidebar layout), or remain route-based with no shared chrome?
-- Dark mode: required, optional, or out of scope?
-- Should player score color bands (high/medium/low) keep the current green/yellow/red palette, or switch to something else (e.g. blue scale)?
-- Is there a preferred PrimeNG theme (e.g. Aura, Lara, Material, Nora)?
+- Should the app have a persistent app-shell (topbar/sidebar layout), or remain route-based with no shared chrome? Yes. Make something userfriendly.
+- Dark mode: required, optional, or out of scope? Out of scope for the moment.
+- Should player score color bands (high/medium/low) keep the current green/yellow/red palette, or switch to something else (e.g. blue scale)? Keep it.
+- Is there a preferred PrimeNG theme (e.g. Aura, Lara, Material, Nora)? NO.
 
 ## Clarifications Needed
 > Minor ambiguities that can be resolved during implementation, but worth flagging.
-- The upload page navigates away after a successful upload — should a success toast/banner be shown before navigation?
-- The role-filter sidebar has no collapse/expand toggle — should one be added as part of this redesign?
-- Should the player table header be sticky when scrolling horizontally, or only vertically?
+- The upload page navigates away after a successful upload — should a success toast/banner be shown before navigation? No. Just take them to the site with the players.
+- The role-filter sidebar has no collapse/expand toggle — should one be added as part of this redesign? You decide, make it user friendly.
+- Should the player table header be sticky when scrolling horizontally, or only vertically? Only vertical right now.
 
 ## Functional Requirements
 - Apply a PrimeNG theme globally via `styles.scss` (replacing the empty global stylesheet).
