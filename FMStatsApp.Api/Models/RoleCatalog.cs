@@ -33,12 +33,10 @@ namespace FMStatsApp.Models
 					{ "Concentration", 3 },
 					{ "Decisions", 1 },
 					{ "Handling", 3 },
-					{ "JumpingReach", 0 },
 					{ "Kicking", 3 },
-					{ "Passing", 3 },
-					{ "Positioning", 5 },
+					{ "Positioning", 3 },
 					{ "Reflexes", 5 },
-								{ "Throwing", 1 }
+					{ "Throwing", 1 }
 				}),
 
 			new RoleDefinition(
@@ -192,24 +190,24 @@ namespace FMStatsApp.Models
 				Positions: new List<Position> { Position.DC },
 				AttributeWeights: new Dictionary<string, int>
 				{
-					{ "Acceleration", 3 },
-					{ "AerialAbility", 3 },
-					{ "Anticipation", 3 },
+					{ "Acceleration", 5 },
+					{ "Aggression", 1 },
+					{ "Anticipation", 1 },
 					{ "Bravery", 1 },
-					{ "Concentration", 3 },
+					{ "Concentration", 1 },
 					{ "Composure", 5 },
-					{ "Decisions", 3 },
-					{ "FirstTouch", 3 },
+					{ "Decisions", 1 },
+					{ "FirstTouch", 1 },
 					{ "Heading", 3 },
-					{ "JumpingReach", 3 },
+					{ "JumpingReach", 5 },
 					{ "Marking", 3 },
-					{ "Pace", 3 },
-					{ "Passing", 5 },
+					{ "Pace", 5 },
+					{ "Passing", 3 },
 					{ "Positioning", 3 },
-					{ "Strength", 1 },
+					{ "Strength", 3 },
 					{ "Tackling", 3 },
-					{ "Technique", 3 },
-					{ "Vision", 3 }
+					{ "Technique", 1 },
+					{ "Vision", 1 }
 				}),
 
 			new RoleDefinition(
@@ -231,6 +229,7 @@ namespace FMStatsApp.Models
 					{ "Marking", 3 },
 					{ "Pace", 5 },
 					{ "Passing", 3 },
+					{ "Positioning", 3 },
 					{ "Strength", 1 },
 					{ "Tackling", 3 },
 					{ "Technique", 1 },
