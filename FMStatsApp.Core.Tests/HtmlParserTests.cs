@@ -181,12 +181,11 @@ public class HtmlParserTests
         // Adrian Kurd Rønning's GKD score — hand-calculated:
         // GKD weights: OneVsOne=1, AerialAbility=3, Agility=5, Anticipation=1,
         //              CommandOfArea=3, Concentration=3, Decisions=1, Handling=3,
-        //              JumpingReach=0, Kicking=3, Passing=3, Positioning=5,
-        //              Reflexes=5, Throwing=1  → weightSum=37
+        //              Kicking=3, Positioning=3, Reflexes=5, Throwing=1  → weightSum=32
         //
-        // 2*1 + 3*3 + 15*5 + 12*1 + 1*3 + 6*3 + 8*1 + 4*3 + 9*0 + 2*3 + 11*3 + 3*5 + 2*5 + 3*1
-        // = 2 + 9 + 75 + 12 + 3 + 18 + 8 + 12 + 0 + 6 + 33 + 15 + 10 + 3 = 206
-        // score = 206 / 37 ≈ 5.567
+        // 2*1 + 3*3 + 15*5 + 12*1 + 1*3 + 6*3 + 8*1 + 4*3 + 2*3 + 3*3 + 2*5 + 3*1
+        // = 2 + 9 + 75 + 12 + 3 + 18 + 8 + 12 + 6 + 9 + 10 + 3 = 167
+        // score = 167 / 32 = 5.21875
         var parser = new HtmlParser(new ScoringCalculator());
         using var stream = File.OpenRead(FixturePath);
 
@@ -194,7 +193,7 @@ public class HtmlParserTests
         var player = players[0];
         var gkd = player.Roles.Single(r => r.ShortRoleName == "GKD");
 
-        float expectedScore = 206f / 37f;
+        float expectedScore = 167f / 32f;
         Assert.True(Math.Abs(gkd.RoleScore - expectedScore) < 0.001f,
             $"GKD expected {expectedScore} but got {gkd.RoleScore}");
     }

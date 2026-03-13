@@ -105,13 +105,12 @@ public class ScoringCalculatorTests
         // Hand-calculated for GKD role:
         // Weights: OneVsOne=1, AerialAbility=3, Agility=5, Anticipation=1,
         //          CommandOfArea=3, Concentration=3, Decisions=1, Handling=3,
-        //          JumpingReach=0, Kicking=3, Passing=3, Positioning=5,
-        //          Reflexes=5, Throwing=1  => weightSum=37
+        //          Kicking=3, Positioning=3, Reflexes=5, Throwing=1  => weightSum=32
         //
-        // Base: all attributes = 10 => baseScore = 370
-        // Agility=15 (+5 * 5 = +25), Reflexes=14 (+4 * 5 = +20), Positioning=12 (+2 * 5 = +10)
-        // totalScore = 370 + 25 + 20 + 10 = 425
-        // expectedScore = 425 / 37 ≈ 11.4865
+        // Base: all attributes = 10 => baseScore = 320
+        // Agility=15 (+5 * 5 = +25), Reflexes=14 (+4 * 5 = +20), Positioning=12 (+2 * 3 = +6)
+        // totalScore = 320 + 25 + 20 + 6 = 371
+        // expectedScore = 371 / 32 = 11.59375
         var calculator = new ScoringCalculator();
         var player = CreatePlayerWithAllAttributes(10);
         player.Agility = 15;
@@ -121,7 +120,7 @@ public class ScoringCalculatorTests
         var roles = calculator.AddRoleScoring(player);
         var gkd = roles.Single(r => r.ShortRoleName == "GKD");
 
-        float expectedScore = 425f / 37f;
+        float expectedScore = 371f / 32f;
         Assert.True(
             Math.Abs(gkd.RoleScore - expectedScore) < 0.001f,
             $"GKD expected {expectedScore} but got {gkd.RoleScore}");
