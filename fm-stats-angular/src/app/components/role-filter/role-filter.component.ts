@@ -1,4 +1,5 @@
 import { Component, inject, computed } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { PlayerService } from '../../services/player.service';
 
@@ -11,18 +12,17 @@ import { PlayerService } from '../../services/player.service';
 })
 export class RoleFilterComponent {
   protected playerService = inject(PlayerService);
+  protected activeRoles = toSignal(this.playerService.activeRoles$, { initialValue: new Set<string>() });
 
-  // Get the grouped roles from the service
   roleGroups = computed(() => {
     const roles = this.playerService.roles();
     return Object.entries(roles).map(([groupName, roleList]) => ({
       groupName,
       roles: roleList,
-      // A group is "checked" if ALL its roles are in activeRoles
-      allChecked: roleList.every(r => this.playerService.activeRoles().has(r.shortRoleName)),
-      // A group is "indeterminate" if SOME (but not all) roles are in activeRoles
-      indeterminate: roleList.some(r => this.playerService.activeRoles().has(r.shortRoleName)) &&
-                     !roleList.every(r => this.playerService.activeRoles().has(r.shortRoleName))
+      allChecked: roleList.every(r => this.activeRoles().has(r.shortRoleName)),
+      indeterminate:
+        roleList.some(r => this.activeRoles().has(r.shortRoleName)) &&
+        !roleList.every(r => this.activeRoles().has(r.shortRoleName)),
     }));
   });
 
@@ -37,7 +37,7 @@ export class RoleFilterComponent {
   toggleGroup(groupName: string, checked: boolean): void {
     const roles = this.playerService.roles();
     const groupRoles = roles[groupName] ?? [];
-    const current = new Set(this.playerService.activeRoles());
+    const current = new Set(this.activeRoles());
 
     for (const role of groupRoles) {
       if (checked) {
@@ -47,16 +47,16 @@ export class RoleFilterComponent {
       }
     }
 
-    this.playerService.activeRoles.set(current);
+    this.playerService.setActiveRoles(current);
   }
 
   toggleRole(shortRoleName: string, checked: boolean): void {
-    const current = new Set(this.playerService.activeRoles());
+    const current = new Set(this.activeRoles());
     if (checked) {
       current.add(shortRoleName);
     } else {
       current.delete(shortRoleName);
     }
-    this.playerService.activeRoles.set(current);
+    this.playerService.setActiveRoles(current);
   }
 }

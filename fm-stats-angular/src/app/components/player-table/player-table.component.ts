@@ -1,4 +1,5 @@
 import { Component, inject, computed } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TableModule } from 'primeng/table';
@@ -15,6 +16,8 @@ import { RoleFilterComponent } from '../role-filter/role-filter.component';
 })
 export class PlayerTableComponent {
   protected playerService = inject(PlayerService);
+  protected players = toSignal(this.playerService.players$, { initialValue: [] as Player[] });
+  protected activeRoles = toSignal(this.playerService.activeRoles$, { initialValue: new Set<string>() });
 
   basicColumns = [
     { field: 'name', header: 'Name' },
@@ -27,11 +30,10 @@ export class PlayerTableComponent {
     { field: 'averageRating', header: 'Rating' },
   ];
 
-  // Computed: derive role columns from the first player's roles, filtered by activeRoles
   roleColumns = computed(() => {
-    const players = this.playerService.players();
+    const players = this.players();
     if (players.length === 0) return [];
-    const activeRoles = this.playerService.activeRoles();
+    const activeRoles = this.activeRoles();
     return players[0].roles.filter(r => activeRoles.has(r.shortRoleName));
   });
 

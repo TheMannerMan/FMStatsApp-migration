@@ -16,7 +16,7 @@
       <label *ngFor="let role of group.roles" class="role-label">
         <input
           type="checkbox"
-          [checked]="playerService.activeRoles().has(role.shortRoleName)"
+          [checked]="activeRoles().has(role.shortRoleName)"
           (change)="onRoleChange(role.shortRoleName, $event)"
         />
         {{ role.shortRoleName }}
