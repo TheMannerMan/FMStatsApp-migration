@@ -67,10 +67,26 @@ Redesign the FM Stats Angular application to look and feel like a modern sports 
 
 ## Testing Guidelines
 
-Write tests before implementation (TDD). Create test file(s) in ./tests for:
+Write tests before implementation (TDD). There are two layers of tests:
+
+### Unit / Component Tests (Angular TestBed, `ng test`)
+
+Create test files alongside each component (`.spec.ts`) for:
 
 - **UploadComponent**: test that dragover event sets the visual highlight state; test that dragleave removes it; test that drop with a valid `.html` file triggers the upload flow; test that drop with an invalid file type shows an error.
 - **AppHeaderComponent** (new): test that the component renders the app title "FM Stats"; test that navigation links route to `/upload` and `/players`.
 - **PlayerTableComponent**: test that the Name column has the `frozen` attribute applied; test that the filter panel toggle button exists and emits an open event.
 - **RoleFilterComponent**: test that closing and reopening the panel does not reset checkbox selections.
 - **CSS tokens**: smoke-test that `styles.scss` exports the expected custom property names (can be done with a simple grep/existence check in CI).
+
+### E2E Tests (Playwright, `npm run e2e`)
+
+Tests live in `fm-stats-angular/tests/`. Playwright is configured for Firefox in headed mode and starts `ng serve` automatically.
+
+Cover each Acceptance Criterion with a Playwright test:
+
+- **Dark theme**: navigate to `/`, assert no element has a light background (e.g. `background-color` is not white/near-white).
+- **Drag-over highlight**: simulate `dragenter` on the upload zone, assert the highlight CSS class is applied; simulate `dragleave`, assert it is removed.
+- **Sticky header**: navigate to `/players`, scroll down, assert the header element is still within the viewport.
+- **Frozen Name column**: navigate to `/players` with data loaded, scroll the table horizontally, assert the Name column cell remains visible in the viewport.
+- **Filter panel state**: open the filter panel, check a role checkbox, close the panel, reopen it, assert the checkbox is still checked.
