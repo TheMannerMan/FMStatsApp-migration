@@ -31,7 +31,8 @@ export class UploadComponent {
     this.errorMessage = null;
 
     this.playerService.uploadFile(this.selectedFile).subscribe({
-      next: () => {
+      next: (players) => {
+        this.playerService.setPlayers(players);
         this.isLoading = false;
         this.router.navigate(['/players']);
       },
