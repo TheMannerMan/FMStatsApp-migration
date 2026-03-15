@@ -52,7 +52,7 @@ export class UploadComponent {
   }
 
   onUpload(): void {
-    if (!this.selectedFile) return;
+    if (!this.selectedFile || this.isLoading) return;
 
     this.isLoading = true;
     this.errorMessage = null;

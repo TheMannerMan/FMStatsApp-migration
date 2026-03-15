@@ -87,6 +87,21 @@ describe('UploadComponent', () => {
       expect(spy).toHaveBeenCalledWith(players);
     });
 
+    it('triggers upload when file is selected via input', () => {
+      const spy = vi.spyOn(playerService, 'setPlayers');
+      // Simulate file selection by calling onFileSelected with a synthetic event
+      const file = new File(['<html></html>'], 'export.html', { type: 'text/html' });
+      const input = document.createElement('input');
+      Object.defineProperty(input, 'files', { value: [file] });
+      const event = { target: input } as unknown as Event;
+
+      component.onFileSelected(event);
+
+      const req = httpMock.expectOne('/api/players/upload');
+      req.flush([mockPlayer()]);
+      expect(spy).toHaveBeenCalled();
+    });
+
     it('does not call setPlayers when no file selected', () => {
       const spy = vi.spyOn(playerService, 'setPlayers');
       component.onUpload();
