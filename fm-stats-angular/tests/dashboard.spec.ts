@@ -60,7 +60,7 @@ test.describe('FM Stats App', () => {
       await expect(page.locator('.upload-drop-zone')).toBeVisible();
     });
 
-    test('dragenter adds active highlight class', async ({ page }) => {
+    test('dragover adds active highlight class', async ({ page }) => {
       await page.goto('/upload');
       const zone = page.locator('.upload-drop-zone');
 
