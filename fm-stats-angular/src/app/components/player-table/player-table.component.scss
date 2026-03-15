@@ -1,31 +1,80 @@
-.players-layout {
+.table-page {
+  padding: 1rem 1.5rem;
+  height: calc(100vh - var(--header-height));
   display: flex;
-  height: 100vh;
+  flex-direction: column;
   overflow: hidden;
 }
 
-.table-wrapper {
-  flex: 1;
-  overflow: auto;
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+
+  &__title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+}
+
+.filter-toggle-btn {
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0.45rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+
+  &:hover {
+    border-color: var(--color-accent);
+    background-color: var(--color-accent-hover-bg);
+  }
 }
 
 .table-container {
-  padding: 1rem;
-  overflow-x: auto;
+  flex: 1;
+  overflow: hidden;
+}
+
+.col-name {
+  min-width: 160px;
+  font-weight: 600;
+  background-color: var(--color-bg-surface);
 }
 
 .score-high {
-  background-color: #d4edda;
-  color: #155724;
+  background-color: var(--color-score-high-bg);
+  color: var(--color-score-high-text);
   font-weight: 600;
 }
 
 .score-medium {
-  background-color: #fff3cd;
-  color: #856404;
+  background-color: var(--color-score-medium-bg);
+  color: var(--color-score-medium-text);
 }
 
 .score-low {
-  background-color: #f8d7da;
-  color: #721c24;
+  background-color: var(--color-score-low-bg);
+  color: var(--color-score-low-text);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-text-secondary);
+
+  a {
+    color: var(--color-accent);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 }

@@ -1,25 +1,47 @@
-<div class="upload-container">
-  <h1>FM Stats - Upload Export</h1>
-  <p>Select your Football Manager HTML export file to view player statistics.</p>
+<div class="upload-page">
+  <div class="upload-card">
+    <div class="upload-card__header">
+      <span class="upload-card__icon">📂</span>
+      <h1 class="upload-card__title">FM Stats</h1>
+      <p class="upload-card__subtitle">
+        Upload your Football Manager HTML export to analyse player statistics.
+      </p>
+    </div>
 
-  <div class="upload-form">
+    <div
+      class="upload-drop-zone"
+      [class.upload-drop-zone--active]="isDragOver"
+      [class.upload-drop-zone--loading]="isLoading"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave()"
+      (drop)="onDrop($event)"
+      (click)="fileInput.click()"
+      (keydown.enter)="fileInput.click()"
+      (keydown.space)="$event.preventDefault(); fileInput.click()"
+      role="button"
+      tabindex="0"
+      aria-label="Click or drag an HTML file to upload"
+    >
+      <span class="upload-drop-zone__icon">{{ isLoading ? '⏳' : '⬆️' }}</span>
+      <p class="upload-drop-zone__label">
+        {{ isLoading ? 'Processing…' : 'Drag & drop your HTML export here, or click to browse' }}
+      </p>
+      <p *ngIf="selectedFile && !isLoading" class="upload-drop-zone__filename">
+        {{ selectedFile.name }}
+      </p>
+    </div>
+
     <input
+      #fileInput
       type="file"
       accept=".html"
+      class="upload-file-input"
       (change)="onFileSelected($event)"
       [disabled]="isLoading"
     />
 
-    <button
-      (click)="onUpload()"
-      [disabled]="!selectedFile || isLoading"
-    >
-      <span *ngIf="!isLoading">Upload</span>
-      <span *ngIf="isLoading">Loading...</span>
-    </button>
-  </div>
-
-  <div *ngIf="errorMessage" class="error-message">
-    {{ errorMessage }}
+    <div *ngIf="errorMessage" class="upload-error">
+      {{ errorMessage }}
+    </div>
   </div>
 </div>

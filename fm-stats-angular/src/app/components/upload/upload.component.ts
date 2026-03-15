@@ -8,7 +8,7 @@ import { PlayerService } from '../../services/player.service';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './upload.component.html',
-  styleUrl: './upload.component.scss'
+  styleUrl: './upload.component.scss',
 })
 export class UploadComponent {
   private playerService = inject(PlayerService);
@@ -16,16 +16,43 @@ export class UploadComponent {
 
   selectedFile: File | null = null;
   isLoading = false;
+  isDragOver = false;
   errorMessage: string | null = null;
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.selectedFile = input.files?.[0] ?? null;
     this.errorMessage = null;
+    if (this.selectedFile) {
+      this.onUpload();
+    }
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragOver = true;
+  }
+
+  onDragLeave(): void {
+    this.isDragOver = false;
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragOver = false;
+    const file = event.dataTransfer?.files?.[0] ?? null;
+    if (!file) return;
+    if (!file.name.endsWith('.html') && file.type !== 'text/html') {
+      this.errorMessage = 'Invalid file type. Please upload an HTML export from Football Manager.';
+      return;
+    }
+    this.selectedFile = file;
+    this.errorMessage = null;
+    this.onUpload();
   }
 
   onUpload(): void {
-    if (!this.selectedFile) return;
+    if (!this.selectedFile || this.isLoading) return;
 
     this.isLoading = true;
     this.errorMessage = null;
@@ -39,7 +66,7 @@ export class UploadComponent {
       error: (err) => {
         this.isLoading = false;
         this.errorMessage = err.error?.message ?? 'Upload failed. Please try again.';
-      }
+      },
     });
   }
 }
