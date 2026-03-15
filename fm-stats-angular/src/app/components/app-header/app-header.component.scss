@@ -1,0 +1,55 @@
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-height);
+  background-color: var(--color-bg-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  z-index: 100;
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+  }
+
+  &__icon {
+    font-size: 1.4rem;
+  }
+
+  &__title {
+    letter-spacing: 0.03em;
+  }
+
+  &__nav {
+    display: flex;
+    gap: 0.25rem;
+
+    a {
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      transition: color 0.15s, background-color 0.15s;
+
+      &:hover {
+        color: var(--color-text-primary);
+        background-color: var(--color-bg-card);
+      }
+
+      &.active {
+        color: var(--color-accent);
+        background-color: rgba(16, 185, 129, 0.1);
+      }
+    }
+  }
+}
