@@ -59,6 +59,13 @@ export class RoleFilterComponent {
   }
 
   protected searchTerm = signal('');
+  private _userOpenedPanels = signal<string[]>([]);
+
+  protected accordionValue = computed(() => {
+    const term = this.searchTerm().trim();
+    if (!term) return this._userOpenedPanels();
+    return this.filteredRoleGroups().map(g => g.groupName);
+  });
 
   filteredRoleGroups = computed(() => {
     const term = this.searchTerm().toLowerCase().trim();
@@ -75,6 +82,12 @@ export class RoleFilterComponent {
 
   onSearchChange(event: Event): void {
     this.searchTerm.set((event.target as HTMLInputElement).value);
+  }
+
+  onAccordionValueChange(values: string | number | string[] | number[] | null | undefined): void {
+    if (!this.searchTerm().trim() && Array.isArray(values)) {
+      this._userOpenedPanels.set(values as string[]);
+    }
   }
 
   toggleRole(shortRoleName: string, checked: boolean): void {

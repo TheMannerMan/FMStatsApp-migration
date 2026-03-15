@@ -242,6 +242,48 @@ describe('RoleFilterComponent', () => {
     });
   });
 
+  describe('auto-expand on search', () => {
+    it('expands accordion panels that contain matching roles when search is active', async () => {
+      const { fixture, component } = await setupComponent(testRoles);
+      (component as any).searchTerm.set('sweeper');
+      fixture.detectChanges();
+      const accordionValue: string[] = (component as any).accordionValue();
+      expect(accordionValue).toContain('Goalkeeper');
+    });
+
+    it('does not include groups with no matching roles in the expanded value', async () => {
+      const { fixture, component } = await setupComponent(testRoles);
+      (component as any).searchTerm.set('sweeper');
+      fixture.detectChanges();
+      const accordionValue: string[] = (component as any).accordionValue();
+      expect(accordionValue).not.toContain('Defender');
+      expect(accordionValue).not.toContain('Midfielder');
+      expect(accordionValue).not.toContain('Forward');
+    });
+  });
+
+  describe('active role selection', () => {
+    it('a role selected before search remains selected even when filtered out of view, and is still selected after clearing search', async () => {
+      const { fixture, component } = await setupComponent(testRoles, new Set(['BBM']));
+      // BBM (Box to Box) is in Midfielder — search for something that hides it
+      (component as any).searchTerm.set('goalkeeper');
+      fixture.detectChanges();
+      // BBM is hidden but still in activeRoles
+      expect((component as any).activeRoles().has('BBM')).toBe(true);
+      // Clear search — BBM checkbox should be checked
+      (component as any).searchTerm.set('');
+      fixture.detectChanges();
+      const checkboxes = Array.from<HTMLInputElement>(
+        fixture.nativeElement.querySelectorAll('label.role-label input[type="checkbox"]')
+      );
+      const bbmCheckbox = checkboxes.find((_, i) => {
+        const label = fixture.nativeElement.querySelectorAll('label.role-label')[i];
+        return label?.textContent?.trim() === 'Box to Box';
+      });
+      expect(bbmCheckbox?.checked).toBe(true);
+    });
+  });
+
   describe('accordion structure', () => {
     it('renders a p-accordion element', async () => {
       const { fixture } = await setupComponent(testRoles);

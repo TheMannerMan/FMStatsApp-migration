@@ -9,7 +9,7 @@
       (click)="$event.stopPropagation()"
     />
   </div>
-  <p-accordion [multiple]="true">
+  <p-accordion [multiple]="true" [value]="accordionValue()" (valueChange)="onAccordionValueChange($event)">
     @for (group of filteredRoleGroups(); track group.groupName) {
       <p-accordion-panel [value]="group.groupName">
         <p-accordion-header>
