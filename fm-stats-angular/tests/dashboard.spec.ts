@@ -202,5 +202,48 @@ test.describe('FM Stats App', () => {
       const brightness = parts.slice(0, 3).reduce((a, b) => a + b, 0);
       expect(brightness).toBeLessThan(200);
     });
+
+    test('can expand an accordion panel and toggle a role to filter the table', async ({ page }) => {
+      // Mock /api/roles so accordion panels have checkboxes
+      await page.route('/api/roles', route =>
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            Forward: [
+              { roleName: 'Striker Support', shortRoleName: 'ST(S)', positions: ['ST'] },
+            ],
+          }),
+        })
+      );
+
+      await seedLocalStorage(page);
+      await page.goto('/players');
+
+      // Open filter drawer
+      await page.locator('.filter-toggle-btn').click();
+      const drawer = page.locator('.p-drawer');
+      await expect(drawer).toBeVisible();
+
+      // Find the Forward accordion panel (should exist)
+      const forwardPanel = drawer.locator('p-accordion-panel').filter({ hasText: 'Forward' });
+      await expect(forwardPanel).toBeVisible();
+
+      // Expand the Forward panel by clicking its header
+      await forwardPanel.locator('p-accordion-header').click();
+
+      // The ST(S) role checkbox should now be visible inside the expanded panel
+      const stCheckbox = forwardPanel.locator('input[type="checkbox"]').last(); // last = role checkbox (not group)
+      await expect(stCheckbox).toBeVisible();
+
+      // ST(S) should be checked (it's in activeRoles from seeded localStorage)
+      await expect(stCheckbox).toBeChecked();
+
+      // Uncheck ST(S) role
+      await stCheckbox.click();
+
+      // The role column header ST(S) should disappear from the table (no active roles)
+      await expect(page.locator('th').filter({ hasText: 'ST(S)' })).not.toBeVisible();
+    });
   });
 });
