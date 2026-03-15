@@ -177,6 +177,14 @@ describe('RoleFilterComponent', () => {
     });
   });
 
+  describe('search input', () => {
+    it('renders a search input at the top of the component', async () => {
+      const { fixture } = await setupComponent(testRoles);
+      const input = fixture.nativeElement.querySelector('input[type="search"], input.role-search-input');
+      expect(input).not.toBeNull();
+    });
+  });
+
   describe('accordion structure', () => {
     it('renders a p-accordion element', async () => {
       const { fixture } = await setupComponent(testRoles);

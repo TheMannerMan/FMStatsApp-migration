@@ -58,6 +58,10 @@ export class RoleFilterComponent {
     this.playerService.setActiveRoles(current);
   }
 
+  onSearchChange(event: Event): void {
+    // wired up in Task 3
+  }
+
   toggleRole(shortRoleName: string, checked: boolean): void {
     const current = new Set(this.activeRoles());
     if (checked) {
