@@ -112,6 +112,39 @@ describe('RoleFilterComponent', () => {
     });
   });
 
+  describe('role label display', () => {
+    it('displays the full role name as the label text, not the abbreviation', async () => {
+      const { fixture } = await setupComponent(testRoles);
+      const labels = fixture.nativeElement.querySelectorAll('label.role-label');
+      const labelTexts = Array.from<Element>(labels).map(el => el.textContent?.trim());
+      expect(labelTexts).toContain('Goalkeeper');
+      expect(labelTexts).toContain('Sweeper Keeper');
+      expect(labelTexts).not.toContain('GK');
+      expect(labelTexts).not.toContain('SK');
+    });
+
+    it('does not display abbreviations as label text', async () => {
+      const { fixture } = await setupComponent(testRoles);
+      const labels = fixture.nativeElement.querySelectorAll('label.role-label');
+      const labelTexts = Array.from<Element>(labels).map(el => el.textContent?.trim());
+      expect(labelTexts).not.toContain('BBM');
+      expect(labelTexts).not.toContain('DLP');
+      expect(labelTexts).not.toContain('AF');
+      expect(labelTexts).not.toContain('CD');
+    });
+
+    it('toggling a role checkbox by full name adds shortRoleName to active roles', async () => {
+      const { fixture, component } = await setupComponent(testRoles);
+      const checkboxes = fixture.nativeElement.querySelectorAll('label.role-label input[type="checkbox"]');
+      // First checkbox corresponds to first role in first group (GK)
+      const firstCheckbox = checkboxes[0] as HTMLInputElement;
+      firstCheckbox.checked = true;
+      firstCheckbox.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      expect((component as any).activeRoles().has('GK')).toBe(true);
+    });
+  });
+
   describe('accordion structure', () => {
     it('renders a p-accordion element', async () => {
       const { fixture } = await setupComponent(testRoles);

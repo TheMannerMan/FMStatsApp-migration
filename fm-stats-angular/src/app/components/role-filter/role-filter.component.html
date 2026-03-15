@@ -22,7 +22,7 @@
                   [checked]="activeRoles().has(role.shortRoleName)"
                   (change)="onRoleChange(role.shortRoleName, $event)"
                 />
-                {{ role.shortRoleName }}
+                {{ role.roleName }}
               </label>
             }
             @if (group.roles.length === 0) {
