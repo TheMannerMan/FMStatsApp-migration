@@ -26,6 +26,7 @@ export class RoleFilterComponent {
         roles: roleList,
         allChecked: roleList.length > 0 && roleList.every(r => this.activeRoles().has(r.shortRoleName)),
         indeterminate:
+          roleList.length > 0 &&
           roleList.some(r => this.activeRoles().has(r.shortRoleName)) &&
           !roleList.every(r => this.activeRoles().has(r.shortRoleName)),
       };

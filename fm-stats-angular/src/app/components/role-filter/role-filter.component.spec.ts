@@ -9,8 +9,6 @@ import { RoleFilterComponent } from './role-filter.component';
 import { PlayerService } from '../../services/player.service';
 import { RoleGroup } from '../../models/role-group.model';
 
-const POSITIONS = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'] as const;
-
 const testRoles: RoleGroup = {
   Goalkeeper: [
     { roleName: 'Goalkeeper', shortRoleName: 'GK', positions: ['GK'] },
@@ -41,7 +39,7 @@ async function setupComponent(roles: RoleGroup, activeRoles: Set<string> = new S
 
   const playerService = TestBed.inject(PlayerService);
   playerService.roles.set(roles);
-  (playerService as any).activeRolesSubject.next(activeRoles);
+  playerService.setActiveRoles(activeRoles);
 
   const fixture = TestBed.createComponent(RoleFilterComponent);
   fixture.detectChanges();
@@ -97,6 +95,12 @@ describe('RoleFilterComponent', () => {
 
     it('indeterminate is false when all roles in a position are active', async () => {
       const { component } = await setupComponent(testRoles, new Set(['GK', 'SK']));
+      const gkGroup = component.roleGroups().find(g => g.groupName === 'Goalkeeper')!;
+      expect(gkGroup.indeterminate).toBe(false);
+    });
+
+    it('indeterminate is false when no roles in a non-empty group are active', async () => {
+      const { component } = await setupComponent(testRoles, new Set());
       const gkGroup = component.roleGroups().find(g => g.groupName === 'Goalkeeper')!;
       expect(gkGroup.indeterminate).toBe(false);
     });
