@@ -1,4 +1,4 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { AccordionModule } from 'primeng/accordion';
@@ -58,8 +58,23 @@ export class RoleFilterComponent {
     this.playerService.setActiveRoles(current);
   }
 
+  protected searchTerm = signal('');
+
+  filteredRoleGroups = computed(() => {
+    const term = this.searchTerm().toLowerCase().trim();
+    if (!term) return this.roleGroups();
+    return this.roleGroups()
+      .map(group => ({
+        ...group,
+        roles: group.roles.filter(r =>
+          (r.roleName ?? '').toLowerCase().includes(term)
+        ),
+      }))
+      .filter(group => group.roles.length > 0);
+  });
+
   onSearchChange(event: Event): void {
-    // wired up in Task 3
+    this.searchTerm.set((event.target as HTMLInputElement).value);
   }
 
   toggleRole(shortRoleName: string, checked: boolean): void {

@@ -183,6 +183,63 @@ describe('RoleFilterComponent', () => {
       const input = fixture.nativeElement.querySelector('input[type="search"], input.role-search-input');
       expect(input).not.toBeNull();
     });
+
+    it('filters displayed roles to those whose roleName contains the search term (case-insensitive)', async () => {
+      const { fixture, component } = await setupComponent(testRoles);
+      (component as any).searchTerm.set('wing');
+      fixture.detectChanges();
+      const labels = Array.from<Element>(
+        fixture.nativeElement.querySelectorAll('label.role-label')
+      ).map(el => el.textContent?.trim());
+      // testRoles has no "wing" role — all labels gone
+      expect(labels.length).toBe(0);
+    });
+
+    it('filters roles matching partial name case-insensitively', async () => {
+      const rolesWithWing: RoleGroup = {
+        ...testRoles,
+        Midfielder: [
+          { roleName: 'Wide Midfielder', shortRoleName: 'WM', positions: ['ML', 'MR'] },
+          { roleName: 'Box to Box', shortRoleName: 'BBM', positions: ['MC'] },
+        ],
+      };
+      const { fixture, component } = await setupComponent(rolesWithWing);
+      (component as any).searchTerm.set('wide');
+      fixture.detectChanges();
+      const labels = Array.from<Element>(
+        fixture.nativeElement.querySelectorAll('label.role-label')
+      ).map(el => el.textContent?.trim());
+      expect(labels).toContain('Wide Midfielder');
+      expect(labels).not.toContain('Box to Box');
+    });
+
+    it('hides position group panels that have no matching roles when search is active', async () => {
+      const { fixture, component } = await setupComponent(testRoles);
+      // "Goalkeeper" only matches GK group roles — Midfielder has no "goalkeeper" role
+      (component as any).searchTerm.set('goalkeeper');
+      fixture.detectChanges();
+      const panels = fixture.nativeElement.querySelectorAll('p-accordion-panel');
+      // Only Goalkeeper group matches
+      expect(panels.length).toBe(1);
+    });
+
+    it('restores all groups and roles when search is cleared', async () => {
+      const { fixture, component } = await setupComponent(testRoles);
+      (component as any).searchTerm.set('goalkeeper');
+      fixture.detectChanges();
+      (component as any).searchTerm.set('');
+      fixture.detectChanges();
+      const panels = fixture.nativeElement.querySelectorAll('p-accordion-panel');
+      expect(panels.length).toBe(4);
+    });
+
+    it('shows no accordion panels when no roles match the search term', async () => {
+      const { fixture, component } = await setupComponent(testRoles);
+      (component as any).searchTerm.set('xyznotarole');
+      fixture.detectChanges();
+      const panels = fixture.nativeElement.querySelectorAll('p-accordion-panel');
+      expect(panels.length).toBe(0);
+    });
   });
 
   describe('accordion structure', () => {

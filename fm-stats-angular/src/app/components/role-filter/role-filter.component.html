@@ -10,7 +10,7 @@
     />
   </div>
   <p-accordion [multiple]="true">
-    @for (group of roleGroups(); track group.groupName) {
+    @for (group of filteredRoleGroups(); track group.groupName) {
       <p-accordion-panel [value]="group.groupName">
         <p-accordion-header>
           <span class="group-checkbox-wrapper" (click)="$event.stopPropagation()">
