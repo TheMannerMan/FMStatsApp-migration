@@ -1,27 +1,36 @@
 <div class="role-filter-content">
-  @for (group of roleGroups(); track group.groupName) {
-    <div class="position-group">
-      <label class="group-label">
-        <input
-          type="checkbox"
-          [checked]="group.allChecked"
-          [indeterminate]="group.indeterminate"
-          (change)="onGroupChange(group.groupName, $event)"
-        />
-        <strong>{{ group.groupName }}</strong>
-      </label>
-      <div class="role-list">
-        @for (role of group.roles; track role.shortRoleName) {
-          <label class="role-label">
+  <p-accordion [multiple]="true">
+    @for (group of roleGroups(); track group.groupName) {
+      <p-accordion-panel [value]="group.groupName">
+        <p-accordion-header>
+          <span class="group-checkbox-wrapper" (click)="$event.stopPropagation()">
             <input
               type="checkbox"
-              [checked]="activeRoles().has(role.shortRoleName)"
-              (change)="onRoleChange(role.shortRoleName, $event)"
+              [checked]="group.allChecked"
+              [indeterminate]="group.indeterminate"
+              (change)="onGroupChange(group.groupName, $event)"
             />
-            {{ role.shortRoleName }}
-          </label>
-        }
-      </div>
-    </div>
-  }
+          </span>
+          <span class="group-label-text">{{ group.groupName }}</span>
+        </p-accordion-header>
+        <p-accordion-content>
+          <div class="role-list">
+            @for (role of group.roles; track role.shortRoleName) {
+              <label class="role-label">
+                <input
+                  type="checkbox"
+                  [checked]="activeRoles().has(role.shortRoleName)"
+                  (change)="onRoleChange(role.shortRoleName, $event)"
+                />
+                {{ role.shortRoleName }}
+              </label>
+            }
+            @if (group.roles.length === 0) {
+              <span class="no-roles">No roles available</span>
+            }
+          </div>
+        </p-accordion-content>
+      </p-accordion-panel>
+    }
+  </p-accordion>
 </div>

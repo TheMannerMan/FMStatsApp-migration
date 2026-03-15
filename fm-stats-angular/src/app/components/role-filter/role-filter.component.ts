@@ -1,12 +1,15 @@
 import { Component, inject, computed } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
+import { AccordionModule } from 'primeng/accordion';
 import { PlayerService } from '../../services/player.service';
+
+const GENERAL_POSITIONS = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'] as const;
 
 @Component({
   selector: 'app-role-filter',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AccordionModule],
   templateUrl: './role-filter.component.html',
   styleUrl: './role-filter.component.scss'
 })
@@ -16,14 +19,17 @@ export class RoleFilterComponent {
 
   roleGroups = computed(() => {
     const roles = this.playerService.roles();
-    return Object.entries(roles).map(([groupName, roleList]) => ({
-      groupName,
-      roles: roleList,
-      allChecked: roleList.every(r => this.activeRoles().has(r.shortRoleName)),
-      indeterminate:
-        roleList.some(r => this.activeRoles().has(r.shortRoleName)) &&
-        !roleList.every(r => this.activeRoles().has(r.shortRoleName)),
-    }));
+    return GENERAL_POSITIONS.map(position => {
+      const roleList = roles[position] ?? [];
+      return {
+        groupName: position,
+        roles: roleList,
+        allChecked: roleList.length > 0 && roleList.every(r => this.activeRoles().has(r.shortRoleName)),
+        indeterminate:
+          roleList.some(r => this.activeRoles().has(r.shortRoleName)) &&
+          !roleList.every(r => this.activeRoles().has(r.shortRoleName)),
+      };
+    });
   });
 
   onGroupChange(groupName: string, event: Event): void {
@@ -38,7 +44,6 @@ export class RoleFilterComponent {
     const roles = this.playerService.roles();
     const groupRoles = roles[groupName] ?? [];
     const current = new Set(this.activeRoles());
-
     for (const role of groupRoles) {
       if (checked) {
         current.add(role.shortRoleName);
@@ -46,7 +51,6 @@ export class RoleFilterComponent {
         current.delete(role.shortRoleName);
       }
     }
-
     this.playerService.setActiveRoles(current);
   }
 
