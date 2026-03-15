@@ -48,7 +48,7 @@
 
       &.active {
         color: var(--color-accent);
-        background-color: rgba(16, 185, 129, 0.1);
+        background-color: var(--color-accent-subtle);
       }
     }
   }
