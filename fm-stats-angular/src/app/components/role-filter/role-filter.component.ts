@@ -20,7 +20,10 @@ export class RoleFilterComponent {
   roleGroups = computed(() => {
     const roles = this.playerService.roles();
     return GENERAL_POSITIONS.map(position => {
-      const roleList = roles[position] ?? [];
+      const rawList = roles[position] ?? [];
+      const roleList = [...rawList].sort((a, b) =>
+        (a.roleName ?? '').localeCompare(b.roleName ?? '')
+      );
       return {
         groupName: position,
         roles: roleList,

@@ -145,6 +145,38 @@ describe('RoleFilterComponent', () => {
     });
   });
 
+  describe('alphabetical order', () => {
+    it('renders roles within each group sorted alphabetically by roleName', async () => {
+      const unsortedRoles: RoleGroup = {
+        Goalkeeper: [],
+        Defender: [],
+        Midfielder: [
+          { roleName: 'Segundo Volante', shortRoleName: 'SV', positions: ['MC'] },
+          { roleName: 'Ball-Winning Midfielder', shortRoleName: 'BWM', positions: ['MC'] },
+          { roleName: 'Advanced Playmaker', shortRoleName: 'AP', positions: ['MC'] },
+        ],
+        Forward: [],
+      };
+      const { fixture } = await setupComponent(unsortedRoles);
+      const labels = Array.from<Element>(
+        fixture.nativeElement.querySelectorAll('label.role-label')
+      ).map(el => el.textContent?.trim());
+      expect(labels).toEqual(['Advanced Playmaker', 'Ball-Winning Midfielder', 'Segundo Volante']);
+    });
+
+    it('handles roles with missing roleName without throwing', async () => {
+      const rolesWithMissing: RoleGroup = {
+        Goalkeeper: [
+          { roleName: '', shortRoleName: 'X', positions: ['GK'] },
+          { roleName: 'Goalkeeper', shortRoleName: 'GK', positions: ['GK'] },
+        ],
+        Defender: [], Midfielder: [], Forward: [],
+      };
+      const { fixture } = await setupComponent(rolesWithMissing);
+      expect(fixture.nativeElement).not.toBeNull();
+    });
+  });
+
   describe('accordion structure', () => {
     it('renders a p-accordion element', async () => {
       const { fixture } = await setupComponent(testRoles);
