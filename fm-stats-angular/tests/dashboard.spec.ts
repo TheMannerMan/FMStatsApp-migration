@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 test.describe('FM Stats App', () => {
   test('app loads and has correct title', async ({ page }) => {
@@ -39,8 +39,8 @@ test.describe('FM Stats App', () => {
 
     test('header contains nav links to Upload and Players', async ({ page }) => {
       await page.goto('/upload');
-      await expect(page.locator('app-header a[routerLink="/upload"]')).toBeVisible();
-      await expect(page.locator('app-header a[routerLink="/players"]')).toBeVisible();
+      await expect(page.locator('app-header a[href="/upload"]')).toBeVisible();
+      await expect(page.locator('app-header a[href="/players"]')).toBeVisible();
     });
 
     test('header remains in viewport after scrolling on players page', async ({ page }) => {
@@ -81,7 +81,7 @@ test.describe('FM Stats App', () => {
   });
 
   test.describe('players table with seeded data', () => {
-    const seedLocalStorage = async (page: any) => {
+    const seedLocalStorage = async (page: Page) => {
       // Seed localStorage with a minimal player dataset before navigating
       const players = Array.from({ length: 5 }, (_, i) => ({
         uid: i + 1,
@@ -109,7 +109,7 @@ test.describe('FM Stats App', () => {
       }));
 
       await page.goto('/');
-      await page.evaluate((data: any) => {
+      await page.evaluate((data: unknown) => {
         localStorage.setItem('uploaded_players', JSON.stringify({
           players: data,
           activeRoles: ['ST(S)'],
@@ -132,6 +132,19 @@ test.describe('FM Stats App', () => {
     });
 
     test('filter checkbox selections persist after panel close and reopen', async ({ page }) => {
+      // Mock /api/roles so checkboxes are always rendered without a real backend
+      await page.route('/api/roles', route =>
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            Striker: [
+              { roleName: 'Striker Support', shortRoleName: 'ST(S)', positions: ['ST'] },
+            ],
+          }),
+        })
+      );
+
       await seedLocalStorage(page);
       await page.goto('/players');
 
@@ -140,31 +153,30 @@ test.describe('FM Stats App', () => {
       const drawer = page.locator('.p-drawer');
       await expect(drawer).toBeVisible();
 
-      // Close drawer via the close button (PrimeNG wraps in p-button; target the inner <button>)
+      // Wait for checkboxes to be rendered (roles loaded via mocked API)
+      const firstCheckbox = drawer.locator('input[type="checkbox"]').first();
+      await expect(firstCheckbox).toBeVisible();
+
+      const firstChecked = await firstCheckbox.isChecked();
+
+      // Close drawer
       await page.locator('.p-drawer-close-button button').click();
       await expect(drawer).not.toBeVisible();
 
-      // Reopen and verify drawer is still functional
+      // Reopen drawer
       await page.locator('.filter-toggle-btn').click();
       await expect(drawer).toBeVisible();
 
-      // If checkboxes are rendered (requires backend /api/roles), verify state is preserved
-      const checkboxCount = await drawer.locator('input[type="checkbox"]').count();
-      if (checkboxCount > 0) {
-        const firstChecked = await drawer.locator('input[type="checkbox"]').first().isChecked();
-        // Close and reopen to verify persistence
-        await page.locator('.p-drawer-close-button button').click();
-        await expect(drawer).not.toBeVisible();
-        await page.locator('.filter-toggle-btn').click();
-        await expect(drawer).toBeVisible();
-        const stillChecked = await drawer.locator('input[type="checkbox"]').first().isChecked();
-        expect(stillChecked).toBe(firstChecked);
-      }
+      // Assert checkbox state is preserved
+      const stillChecked = await drawer.locator('input[type="checkbox"]').first().isChecked();
+      expect(stillChecked).toBe(firstChecked);
     });
 
     test('Name column remains visible after horizontal scroll', async ({ page }) => {
       await seedLocalStorage(page);
       await page.goto('/players');
+      // Wait for table to render frozen column before scrolling
+      await expect(page.locator('td[pfrozencolumn]').first()).toBeVisible();
       await page.evaluate(() => {
         const wrapper = document.querySelector('.p-datatable-wrapper');
         if (wrapper) wrapper.scrollLeft = 600;
@@ -185,6 +197,10 @@ test.describe('FM Stats App', () => {
       );
       // Should not be white
       expect(bg).not.toBe('rgb(255, 255, 255)');
+      // Should be dark green (score-high-bg token: #064e3b = rgb(6, 78, 59), sum = 143)
+      const parts = bg.match(/\d+/g)?.map(Number) ?? [];
+      const brightness = parts.slice(0, 3).reduce((a, b) => a + b, 0);
+      expect(brightness).toBeLessThan(200);
     });
   });
 });
