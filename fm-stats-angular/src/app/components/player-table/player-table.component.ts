@@ -4,7 +4,6 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { DrawerModule } from 'primeng/drawer';
-import { ButtonModule } from 'primeng/button';
 import { PlayerService } from '../../services/player.service';
 import { Player } from '../../models/player.model';
 import { RoleFilterComponent } from '../role-filter/role-filter.component';
@@ -12,7 +11,7 @@ import { RoleFilterComponent } from '../role-filter/role-filter.component';
 @Component({
   selector: 'app-player-table',
   standalone: true,
-  imports: [CommonModule, RouterLink, TableModule, DrawerModule, ButtonModule, RoleFilterComponent],
+  imports: [CommonModule, RouterLink, TableModule, DrawerModule, RoleFilterComponent],
   templateUrl: './player-table.component.html',
   styleUrl: './player-table.component.scss',
 })
@@ -40,11 +39,12 @@ export class PlayerTableComponent {
     return players[0].roles.filter(r => activeRoles.has(r.shortRoleName));
   });
 
-  getRoleScore(player: Player, roleName: string): number {
-    return player.roles.find(r => r.shortRoleName === roleName)?.roleScore ?? 0;
+  getRoleScore(player: Player, roleName: string): number | null {
+    return player.roles.find(r => r.shortRoleName === roleName)?.roleScore ?? null;
   }
 
-  getRoleScoreClass(score: number): string {
+  getRoleScoreClass(score: number | null): string {
+    if (score === null) return '';
     if (score >= 8.0) return 'score-high';
     if (score >= 6.0) return 'score-medium';
     return 'score-low';

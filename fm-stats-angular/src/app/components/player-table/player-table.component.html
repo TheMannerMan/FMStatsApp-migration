@@ -49,7 +49,7 @@
           }
           @for (role of roleColumns(); track role.shortRoleName) {
             @let score = getRoleScore(player, role.shortRoleName);
-            <td [ngClass]="getRoleScoreClass(score)">{{ score | number:'1.1-1' }}</td>
+            <td [ngClass]="getRoleScoreClass(score)">{{ score !== null ? (score | number:'1.1-1') : '' }}</td>
           }
         </tr>
       </ng-template>
