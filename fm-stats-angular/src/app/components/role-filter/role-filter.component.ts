@@ -1,4 +1,4 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { AccordionModule } from 'primeng/accordion';
@@ -20,7 +20,10 @@ export class RoleFilterComponent {
   roleGroups = computed(() => {
     const roles = this.playerService.roles();
     return GENERAL_POSITIONS.map(position => {
-      const roleList = roles[position] ?? [];
+      const rawList = roles[position] ?? [];
+      const roleList = [...rawList].sort((a, b) =>
+        (a.roleName ?? '').localeCompare(b.roleName ?? '')
+      );
       return {
         groupName: position,
         roles: roleList,
@@ -53,6 +56,38 @@ export class RoleFilterComponent {
       }
     }
     this.playerService.setActiveRoles(current);
+  }
+
+  protected searchTerm = signal('');
+  private _userOpenedPanels = signal<string[]>([]);
+
+  protected accordionValue = computed(() => {
+    const term = this.searchTerm().trim();
+    if (!term) return this._userOpenedPanels();
+    return this.filteredRoleGroups().map(g => g.groupName);
+  });
+
+  filteredRoleGroups = computed(() => {
+    const term = this.searchTerm().toLowerCase().trim();
+    if (!term) return this.roleGroups();
+    return this.roleGroups()
+      .map(group => ({
+        ...group,
+        roles: group.roles.filter(r =>
+          (r.roleName ?? '').toLowerCase().includes(term)
+        ),
+      }))
+      .filter(group => group.roles.length > 0);
+  });
+
+  onSearchChange(event: Event): void {
+    this.searchTerm.set((event.target as HTMLInputElement).value);
+  }
+
+  onAccordionValueChange(values: string | number | string[] | number[] | null | undefined): void {
+    if (!this.searchTerm().trim() && Array.isArray(values)) {
+      this._userOpenedPanels.set(values as string[]);
+    }
   }
 
   toggleRole(shortRoleName: string, checked: boolean): void {

@@ -145,6 +145,145 @@ describe('RoleFilterComponent', () => {
     });
   });
 
+  describe('alphabetical order', () => {
+    it('renders roles within each group sorted alphabetically by roleName', async () => {
+      const unsortedRoles: RoleGroup = {
+        Goalkeeper: [],
+        Defender: [],
+        Midfielder: [
+          { roleName: 'Segundo Volante', shortRoleName: 'SV', positions: ['MC'] },
+          { roleName: 'Ball-Winning Midfielder', shortRoleName: 'BWM', positions: ['MC'] },
+          { roleName: 'Advanced Playmaker', shortRoleName: 'AP', positions: ['MC'] },
+        ],
+        Forward: [],
+      };
+      const { fixture } = await setupComponent(unsortedRoles);
+      const labels = Array.from<Element>(
+        fixture.nativeElement.querySelectorAll('label.role-label')
+      ).map(el => el.textContent?.trim());
+      expect(labels).toEqual(['Advanced Playmaker', 'Ball-Winning Midfielder', 'Segundo Volante']);
+    });
+
+    it('handles roles with missing roleName without throwing', async () => {
+      const rolesWithMissing: RoleGroup = {
+        Goalkeeper: [
+          { roleName: '', shortRoleName: 'X', positions: ['GK'] },
+          { roleName: 'Goalkeeper', shortRoleName: 'GK', positions: ['GK'] },
+        ],
+        Defender: [], Midfielder: [], Forward: [],
+      };
+      const { fixture } = await setupComponent(rolesWithMissing);
+      expect(fixture.nativeElement).not.toBeNull();
+    });
+  });
+
+  describe('search input', () => {
+    it('renders a search input at the top of the component', async () => {
+      const { fixture } = await setupComponent(testRoles);
+      const input = fixture.nativeElement.querySelector('input[type="search"], input.role-search-input');
+      expect(input).not.toBeNull();
+    });
+
+    it('filters displayed roles to those whose roleName contains the search term (case-insensitive)', async () => {
+      const { fixture, component } = await setupComponent(testRoles);
+      (component as any).searchTerm.set('wing');
+      fixture.detectChanges();
+      const labels = Array.from<Element>(
+        fixture.nativeElement.querySelectorAll('label.role-label')
+      ).map(el => el.textContent?.trim());
+      // testRoles has no "wing" role — all labels gone
+      expect(labels.length).toBe(0);
+    });
+
+    it('filters roles matching partial name case-insensitively', async () => {
+      const rolesWithWing: RoleGroup = {
+        ...testRoles,
+        Midfielder: [
+          { roleName: 'Wide Midfielder', shortRoleName: 'WM', positions: ['ML', 'MR'] },
+          { roleName: 'Box to Box', shortRoleName: 'BBM', positions: ['MC'] },
+        ],
+      };
+      const { fixture, component } = await setupComponent(rolesWithWing);
+      (component as any).searchTerm.set('wide');
+      fixture.detectChanges();
+      const labels = Array.from<Element>(
+        fixture.nativeElement.querySelectorAll('label.role-label')
+      ).map(el => el.textContent?.trim());
+      expect(labels).toContain('Wide Midfielder');
+      expect(labels).not.toContain('Box to Box');
+    });
+
+    it('hides position group panels that have no matching roles when search is active', async () => {
+      const { fixture, component } = await setupComponent(testRoles);
+      // "Goalkeeper" only matches GK group roles — Midfielder has no "goalkeeper" role
+      (component as any).searchTerm.set('goalkeeper');
+      fixture.detectChanges();
+      const panels = fixture.nativeElement.querySelectorAll('p-accordion-panel');
+      // Only Goalkeeper group matches
+      expect(panels.length).toBe(1);
+    });
+
+    it('restores all groups and roles when search is cleared', async () => {
+      const { fixture, component } = await setupComponent(testRoles);
+      (component as any).searchTerm.set('goalkeeper');
+      fixture.detectChanges();
+      (component as any).searchTerm.set('');
+      fixture.detectChanges();
+      const panels = fixture.nativeElement.querySelectorAll('p-accordion-panel');
+      expect(panels.length).toBe(4);
+    });
+
+    it('shows no accordion panels when no roles match the search term', async () => {
+      const { fixture, component } = await setupComponent(testRoles);
+      (component as any).searchTerm.set('xyznotarole');
+      fixture.detectChanges();
+      const panels = fixture.nativeElement.querySelectorAll('p-accordion-panel');
+      expect(panels.length).toBe(0);
+    });
+  });
+
+  describe('auto-expand on search', () => {
+    it('expands accordion panels that contain matching roles when search is active', async () => {
+      const { fixture, component } = await setupComponent(testRoles);
+      (component as any).searchTerm.set('sweeper');
+      fixture.detectChanges();
+      const accordionValue: string[] = (component as any).accordionValue();
+      expect(accordionValue).toContain('Goalkeeper');
+    });
+
+    it('does not include groups with no matching roles in the expanded value', async () => {
+      const { fixture, component } = await setupComponent(testRoles);
+      (component as any).searchTerm.set('sweeper');
+      fixture.detectChanges();
+      const accordionValue: string[] = (component as any).accordionValue();
+      expect(accordionValue).not.toContain('Defender');
+      expect(accordionValue).not.toContain('Midfielder');
+      expect(accordionValue).not.toContain('Forward');
+    });
+  });
+
+  describe('active role selection', () => {
+    it('a role selected before search remains selected even when filtered out of view, and is still selected after clearing search', async () => {
+      const { fixture, component } = await setupComponent(testRoles, new Set(['BBM']));
+      // BBM (Box to Box) is in Midfielder — search for something that hides it
+      (component as any).searchTerm.set('goalkeeper');
+      fixture.detectChanges();
+      // BBM is hidden but still in activeRoles
+      expect((component as any).activeRoles().has('BBM')).toBe(true);
+      // Clear search — BBM checkbox should be checked
+      (component as any).searchTerm.set('');
+      fixture.detectChanges();
+      const checkboxes = Array.from<HTMLInputElement>(
+        fixture.nativeElement.querySelectorAll('label.role-label input[type="checkbox"]')
+      );
+      const bbmCheckbox = checkboxes.find((_, i) => {
+        const label = fixture.nativeElement.querySelectorAll('label.role-label')[i];
+        return label?.textContent?.trim() === 'Box to Box';
+      });
+      expect(bbmCheckbox?.checked).toBe(true);
+    });
+  });
+
   describe('accordion structure', () => {
     it('renders a p-accordion element', async () => {
       const { fixture } = await setupComponent(testRoles);

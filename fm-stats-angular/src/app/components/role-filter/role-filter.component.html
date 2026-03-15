@@ -1,6 +1,16 @@
 <div class="role-filter-content">
-  <p-accordion [multiple]="true">
-    @for (group of roleGroups(); track group.groupName) {
+  <div class="role-search-wrapper">
+    <input
+      type="search"
+      class="role-search-input"
+      placeholder="Search roles…"
+      autocomplete="off"
+      (input)="onSearchChange($event)"
+      (click)="$event.stopPropagation()"
+    />
+  </div>
+  <p-accordion [multiple]="true" [value]="accordionValue()" (valueChange)="onAccordionValueChange($event)">
+    @for (group of filteredRoleGroups(); track group.groupName) {
       <p-accordion-panel [value]="group.groupName">
         <p-accordion-header>
           <span class="group-checkbox-wrapper" (click)="$event.stopPropagation()">
