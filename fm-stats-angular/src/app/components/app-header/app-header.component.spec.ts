@@ -22,14 +22,14 @@ describe('AppHeaderComponent', () => {
   });
 
   it('has a nav link to /upload', () => {
-    const links = element.querySelectorAll('a[href]');
-    const hrefs = Array.from(links).map(a => a.getAttribute('href'));
+    const links = element.querySelectorAll('a[routerLink]');
+    const hrefs = Array.from(links).map(a => a.getAttribute('routerLink'));
     expect(hrefs).toContain('/upload');
   });
 
   it('has a nav link to /players', () => {
-    const links = element.querySelectorAll('a[href]');
-    const hrefs = Array.from(links).map(a => a.getAttribute('href'));
+    const links = element.querySelectorAll('a[routerLink]');
+    const hrefs = Array.from(links).map(a => a.getAttribute('routerLink'));
     expect(hrefs).toContain('/players');
   });
 });

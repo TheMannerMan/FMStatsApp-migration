@@ -32,24 +32,24 @@
   &__nav {
     display: flex;
     gap: 0.25rem;
+  }
 
-    a {
-      color: var(--color-text-secondary);
-      text-decoration: none;
-      padding: 0.4rem 0.9rem;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      transition: color 0.15s, background-color 0.15s;
+  &__nav-link {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    padding: 0.4rem 0.9rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: color 0.15s, background-color 0.15s;
 
-      &:hover {
-        color: var(--color-text-primary);
-        background-color: var(--color-bg-card);
-      }
+    &:hover {
+      color: var(--color-text-primary);
+      background-color: var(--color-bg-card);
+    }
 
-      &.active {
-        color: var(--color-accent);
-        background-color: var(--color-accent-subtle);
-      }
+    &.active {
+      color: var(--color-accent);
+      background-color: var(--color-accent-subtle);
     }
   }
 }
