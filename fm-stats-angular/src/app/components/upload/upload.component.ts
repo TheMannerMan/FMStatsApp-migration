@@ -23,6 +23,9 @@ export class UploadComponent {
     const input = event.target as HTMLInputElement;
     this.selectedFile = input.files?.[0] ?? null;
     this.errorMessage = null;
+    if (this.selectedFile) {
+      this.onUpload();
+    }
   }
 
   onDragOver(event: DragEvent): void {

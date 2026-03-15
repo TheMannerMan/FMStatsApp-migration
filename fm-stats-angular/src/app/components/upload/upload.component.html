@@ -16,6 +16,8 @@
       (dragleave)="onDragLeave()"
       (drop)="onDrop($event)"
       (click)="fileInput.click()"
+      (keydown.enter)="fileInput.click()"
+      (keydown.space)="$event.preventDefault(); fileInput.click()"
       role="button"
       tabindex="0"
       aria-label="Click or drag an HTML file to upload"
@@ -34,7 +36,7 @@
       type="file"
       accept=".html"
       class="upload-file-input"
-      (change)="onFileSelected($event); onUpload()"
+      (change)="onFileSelected($event)"
       [disabled]="isLoading"
     />
 
