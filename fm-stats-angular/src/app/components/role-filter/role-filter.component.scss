@@ -1,18 +1,9 @@
-.role-filter {
-  padding: 1rem;
-  border-right: 1px solid #dee2e6;
-  min-width: 200px;
-  max-height: 600px;
-  overflow-y: auto;
-
-  h3 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-  }
+.role-filter-content {
+  padding: 0.5rem 0;
 }
 
 .position-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .group-label {
@@ -21,6 +12,11 @@
   gap: 0.5rem;
   cursor: pointer;
   margin-bottom: 0.5rem;
+  color: var(--color-text-primary);
+
+  input[type='checkbox'] {
+    accent-color: var(--color-accent);
+  }
 }
 
 .role-list {
@@ -36,4 +32,9 @@
   gap: 0.5rem;
   cursor: pointer;
   font-size: 0.875rem;
+  color: var(--color-text-secondary);
+
+  input[type='checkbox'] {
+    accent-color: var(--color-accent);
+  }
 }

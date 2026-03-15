@@ -3,6 +3,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TableModule } from 'primeng/table';
+import { DrawerModule } from 'primeng/drawer';
+import { ButtonModule } from 'primeng/button';
 import { PlayerService } from '../../services/player.service';
 import { Player } from '../../models/player.model';
 import { RoleFilterComponent } from '../role-filter/role-filter.component';
@@ -10,23 +12,24 @@ import { RoleFilterComponent } from '../role-filter/role-filter.component';
 @Component({
   selector: 'app-player-table',
   standalone: true,
-  imports: [CommonModule, RouterLink, TableModule, RoleFilterComponent],
+  imports: [CommonModule, RouterLink, TableModule, DrawerModule, ButtonModule, RoleFilterComponent],
   templateUrl: './player-table.component.html',
-  styleUrl: './player-table.component.scss'
+  styleUrl: './player-table.component.scss',
 })
 export class PlayerTableComponent {
   protected playerService = inject(PlayerService);
   protected players = toSignal(this.playerService.players$, { initialValue: [] as Player[] });
   protected activeRoles = toSignal(this.playerService.activeRoles$, { initialValue: new Set<string>() });
 
+  filterDrawerVisible = false;
+
   basicColumns = [
-    { field: 'name', header: 'Name' },
     { field: 'age', header: 'Age' },
     { field: 'club', header: 'Club' },
-    { field: 'nationality', header: 'Nationality' },
-    { field: 'position', header: 'Position' },
+    { field: 'nationality', header: 'Nat.' },
+    { field: 'position', header: 'Pos.' },
     { field: 'wage', header: 'Wage' },
-    { field: 'transferValue', header: 'Transfer Value' },
+    { field: 'transferValue', header: 'Value' },
     { field: 'averageRating', header: 'Rating' },
   ];
 
@@ -45,5 +48,9 @@ export class PlayerTableComponent {
     if (score >= 8.0) return 'score-high';
     if (score >= 6.0) return 'score-medium';
     return 'score-low';
+  }
+
+  toggleFilterDrawer(): void {
+    this.filterDrawerVisible = !this.filterDrawerVisible;
   }
 }
