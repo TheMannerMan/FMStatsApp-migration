@@ -18,3 +18,39 @@ export function buildScoreMatrix(players: Player[], slotRoles: string[]): number
     slotRoles.map((role) => getPlayerRoleScore(player, role))
   );
 }
+
+export interface ConstrainedMatrixResult {
+  matrix: number[][];
+  rowMap: number[];
+  colMap: number[];
+}
+
+/**
+ * Builds a reduced score matrix excluding locked player/slot pairs.
+ * Returns the sub-matrix plus mappings from reduced indices back to original indices.
+ */
+export function buildConstrainedScoreMatrix(
+  players: Player[],
+  slotRoles: string[],
+  lockedPairs: { slotIndex: number; playerIndex: number }[]
+): ConstrainedMatrixResult {
+  const lockedPlayerIndices = new Set(lockedPairs.map((lp) => lp.playerIndex));
+  const lockedSlotIndices = new Set(lockedPairs.map((lp) => lp.slotIndex));
+
+  const rowMap = players
+    .map((_, i) => i)
+    .filter((i) => !lockedPlayerIndices.has(i));
+  const colMap = slotRoles
+    .map((_, i) => i)
+    .filter((i) => !lockedSlotIndices.has(i));
+
+  if (rowMap.length === 0 || colMap.length === 0) {
+    return { matrix: [], rowMap: [], colMap: [] };
+  }
+
+  const matrix = rowMap.map((pi) =>
+    colMap.map((si) => getPlayerRoleScore(players[pi], slotRoles[si]))
+  );
+
+  return { matrix, rowMap, colMap };
+}
