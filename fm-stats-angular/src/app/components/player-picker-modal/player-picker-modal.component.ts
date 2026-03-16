@@ -5,6 +5,9 @@ import { ButtonModule } from 'primeng/button';
 import { Player } from '../../models/player.model';
 import { getPlayerRoleScore } from '../../utils/score-matrix';
 
+export type SortColumn = 'name' | 'position' | 'rating';
+export type SortDirection = 'asc' | 'desc';
+
 function normalizeForSearch(str: string): string {
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
@@ -33,19 +36,52 @@ export class PlayerPickerModalComponent {
   }
 
   searchTerm = signal('');
+  sortColumn = signal<SortColumn>('name');
+  sortDirection = signal<SortDirection>('asc');
 
   protected hasPlayers = computed(() => this._players().length > 0);
 
   filteredPlayers = computed(() => {
     const term = normalizeForSearch(this.searchTerm());
-    const playerList = this._players();
-    if (!term) return playerList;
-    return playerList.filter(p => normalizeForSearch(p.name).includes(term));
+    let players = this._players();
+    if (term) {
+      players = players.filter(p => normalizeForSearch(p.name).includes(term));
+    }
+
+    const col = this.sortColumn();
+    const dir = this.sortDirection();
+
+    return [...players].sort((a, b) => {
+      let cmp = 0;
+      if (col === 'name') {
+        cmp = normalizeForSearch(a.name).localeCompare(normalizeForSearch(b.name));
+      } else if (col === 'position') {
+        cmp = a.position.toLowerCase().localeCompare(b.position.toLowerCase());
+      } else {
+        // rating
+        cmp = this.getScore(a) - this.getScore(b);
+      }
+      // Stable tiebreak: fallback to name ascending
+      if (cmp === 0 && col !== 'name') {
+        cmp = normalizeForSearch(a.name).localeCompare(normalizeForSearch(b.name));
+      }
+      return dir === 'asc' ? cmp : -cmp;
+    });
   });
 
   getScore(player: Player): number {
     if (!this.selectedRole) return 0;
     return getPlayerRoleScore(player, this.selectedRole);
+  }
+
+  setSortColumn(col: SortColumn): void {
+    if (col === 'rating' && !this.selectedRole) return;
+    if (this.sortColumn() === col) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortColumn.set(col);
+      this.sortDirection.set(col === 'rating' ? 'desc' : 'asc');
+    }
   }
 
   selectPlayer(uid: number): void {
@@ -65,5 +101,6 @@ export class PlayerPickerModalComponent {
   onDialogHide(): void {
     this.visibleChange.emit(false);
     this.searchTerm.set('');
+    // Sort state intentionally NOT reset — persists across open/close per spec
   }
 }
