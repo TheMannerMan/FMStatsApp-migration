@@ -22,7 +22,9 @@ function normalizeForSearch(str: string): string {
 export class PlayerPickerModalComponent {
   @Input() visible = false;
   @Output() visibleChange = new EventEmitter<boolean>();
-  @Input() selectedRole: string | null = null;
+  private _selectedRole = signal<string | null>(null);
+  @Input() set selectedRole(val: string | null) { this._selectedRole.set(val); }
+  get selectedRole(): string | null { return this._selectedRole(); }
   @Input() selectedPlayerUid: number | null = null;
   @Output() playerSelected = new EventEmitter<number | null>();
 
@@ -61,21 +63,21 @@ export class PlayerPickerModalComponent {
         // rating
         cmp = this.getScore(a) - this.getScore(b);
       }
-      // Stable tiebreak: fallback to name ascending
+      // Stable tiebreak: fallback to name ascending (always ascending, bypass dir)
       if (cmp === 0 && col !== 'name') {
-        cmp = normalizeForSearch(a.name).localeCompare(normalizeForSearch(b.name));
+        return normalizeForSearch(a.name).localeCompare(normalizeForSearch(b.name));
       }
       return dir === 'asc' ? cmp : -cmp;
     });
   });
 
   getScore(player: Player): number {
-    if (!this.selectedRole) return 0;
-    return getPlayerRoleScore(player, this.selectedRole);
+    if (!this._selectedRole()) return 0;
+    return getPlayerRoleScore(player, this._selectedRole()!);
   }
 
   setSortColumn(col: SortColumn): void {
-    if (col === 'rating' && !this.selectedRole) return;
+    if (col === 'rating' && !this._selectedRole()) return;
     if (this.sortColumn() === col) {
       this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
     } else {
