@@ -31,6 +31,43 @@
     } @else if (filteredPlayers().length === 0) {
       <p class="empty-state">No players found</p>
     } @else {
+      <div class="sort-header">
+        <button
+          class="sort-btn"
+          [class.sort-btn--active]="sortColumn() === 'name'"
+          (click)="setSortColumn('name')"
+        >
+          Name
+          @if (sortColumn() === 'name') {
+            <span class="sort-arrow">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
+          }
+        </button>
+        <div class="sort-header-right">
+          <button
+            class="sort-btn"
+            [class.sort-btn--active]="sortColumn() === 'position'"
+            (click)="setSortColumn('position')"
+          >
+            Pos
+            @if (sortColumn() === 'position') {
+              <span class="sort-arrow">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
+            }
+          </button>
+          <button
+            class="sort-btn"
+            [class.sort-btn--active]="sortColumn() === 'rating'"
+            [class.sort-btn--disabled]="!selectedRole"
+            [disabled]="!selectedRole"
+            (click)="setSortColumn('rating')"
+          >
+            Rating
+            @if (sortColumn() === 'rating') {
+              <span class="sort-arrow">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
+            }
+          </button>
+        </div>
+      </div>
+
       <ul class="player-list">
         @for (player of filteredPlayers(); track player.uid) {
           <li
