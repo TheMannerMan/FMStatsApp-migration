@@ -28,11 +28,10 @@
 
     @if (!hasPlayers()) {
       <p class="empty-state">No eligible players. Mark players in the roster panel.</p>
-    } @else if (filteredPlayers().length === 0) {
-      <p class="empty-state">No players found</p>
     } @else {
       <div class="sort-header">
         <button
+          type="button"
           class="sort-btn"
           [class.sort-btn--active]="sortColumn() === 'name'"
           (click)="setSortColumn('name')"
@@ -44,6 +43,7 @@
         </button>
         <div class="sort-header-right">
           <button
+            type="button"
             class="sort-btn"
             [class.sort-btn--active]="sortColumn() === 'position'"
             (click)="setSortColumn('position')"
@@ -54,6 +54,7 @@
             }
           </button>
           <button
+            type="button"
             class="sort-btn"
             [class.sort-btn--active]="sortColumn() === 'rating'"
             [class.sort-btn--disabled]="!selectedRole"
@@ -68,23 +69,27 @@
         </div>
       </div>
 
-      <ul class="player-list">
-        @for (player of filteredPlayers(); track player.uid) {
-          <li
-            class="player-item"
-            [class.player-item--selected]="player.uid === selectedPlayerUid"
-            (click)="selectPlayer(player.uid)"
-          >
-            <span class="player-item-name">{{ player.name }}</span>
-            <span class="player-item-meta">
-              <span class="player-item-position">{{ player.position }}</span>
-              @if (selectedRole) {
-                <span class="player-item-score">{{ getScore(player) | number:'1.1-1' }}</span>
-              }
-            </span>
-          </li>
-        }
-      </ul>
+      @if (filteredPlayers().length === 0) {
+        <p class="empty-state">No players found</p>
+      } @else {
+        <ul class="player-list">
+          @for (player of filteredPlayers(); track player.uid) {
+            <li
+              class="player-item"
+              [class.player-item--selected]="player.uid === selectedPlayerUid"
+              (click)="selectPlayer(player.uid)"
+            >
+              <span class="player-item-name">{{ player.name }}</span>
+              <span class="player-item-meta">
+                <span class="player-item-position">{{ player.position }}</span>
+                @if (selectedRole) {
+                  <span class="player-item-score">{{ getScore(player) | number:'1.1-1' }}</span>
+                }
+              </span>
+            </li>
+          }
+        </ul>
+      }
     }
   </div>
 </p-dialog>
