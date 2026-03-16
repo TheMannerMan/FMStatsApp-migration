@@ -1,0 +1,53 @@
+<p-dialog
+  [visible]="visible"
+  (visibleChange)="visibleChange.emit($event)"
+  (onHide)="onDialogHide()"
+  header="Lock Player"
+  [modal]="true"
+  [style]="{ width: '460px' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <div class="player-picker-content">
+    <input
+      class="player-search-input"
+      type="text"
+      placeholder="Search players…"
+      [value]="searchTerm()"
+      (input)="onSearchInput($event)"
+      autocomplete="off"
+    />
+
+    <button
+      pButton
+      class="no-lock-btn"
+      label="No lock"
+      severity="secondary"
+      (click)="clearLock()"
+    ></button>
+
+    @if (!hasPlayers()) {
+      <p class="empty-state">No eligible players. Mark players in the roster panel.</p>
+    } @else if (filteredPlayers().length === 0) {
+      <p class="empty-state">No players found</p>
+    } @else {
+      <ul class="player-list">
+        @for (player of filteredPlayers(); track player.uid) {
+          <li
+            class="player-item"
+            [class.player-item--selected]="player.uid === selectedPlayerUid"
+            (click)="selectPlayer(player.uid)"
+          >
+            <span class="player-item-name">{{ player.name }}</span>
+            <span class="player-item-meta">
+              <span class="player-item-position">{{ player.position }}</span>
+              @if (selectedRole) {
+                <span class="player-item-score">{{ getScore(player) | number:'1.1-1' }}</span>
+              }
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</p-dialog>

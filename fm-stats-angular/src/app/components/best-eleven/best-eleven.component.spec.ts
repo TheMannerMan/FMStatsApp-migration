@@ -555,6 +555,55 @@ describe('BestElevenComponent', () => {
     expect(layout!.querySelector('.formation-column')).toBeTruthy();
     expect(layout!.querySelector('.roster-panel')).toBeTruthy();
   });
+
+  // ── Step 8: Modal slot buttons ────────────────────────────────────────────
+
+  it('slot card shows "Select Role" button before role is selected', () => {
+    playersSubject.next(make11Players());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    const roleBtn = element.querySelector('.slot-role-btn') as HTMLButtonElement;
+    expect(roleBtn).toBeTruthy();
+    expect(roleBtn.textContent).toContain('Select Role');
+  });
+
+  it('slot card shows full role name (not short name) after role is selected', () => {
+    playersSubject.next(make11Players());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    component.selectedRoles.set(['SK', null, null, null, null, null, null, null, null, null, null]);
+    fixture.detectChanges();
+
+    const roleBtn = element.querySelector('.slot-role-btn') as HTMLButtonElement;
+    expect(roleBtn).toBeTruthy();
+    expect(roleBtn.textContent).toContain('Sweeper Keeper');
+    expect(roleBtn.textContent).not.toContain('SK');
+  });
+
+  it('player button is disabled when no role is selected for a slot', () => {
+    playersSubject.next(make11Players());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    const playerBtn = element.querySelector('.slot-player-btn') as HTMLButtonElement;
+    expect(playerBtn).toBeTruthy();
+    expect(playerBtn.disabled).toBe(true);
+  });
+
+  it('player button is enabled after role is selected for the slot', () => {
+    playersSubject.next(make11Players());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    component.selectedRoles.set(['SK', null, null, null, null, null, null, null, null, null, null]);
+    fixture.detectChanges();
+
+    const playerBtn = element.querySelector('.slot-player-btn') as HTMLButtonElement;
+    expect(playerBtn).toBeTruthy();
+    expect(playerBtn.disabled).toBe(false);
+  });
 });
 
 // ── Step 4: localStorage persistence ─────────────────────────────────────────
