@@ -13,8 +13,8 @@ import { PlayerService } from '../../services/player.service';
 })
 export class AppHeaderComponent {
   private playerService = inject(PlayerService);
-  protected hasEnoughPlayers = toSignal(
-    this.playerService.players$.pipe(map(p => p.length >= 11)),
+  protected hasPlayers = toSignal(
+    this.playerService.players$.pipe(map(p => p.length > 0)),
     { initialValue: false },
   );
 }
