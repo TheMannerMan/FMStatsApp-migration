@@ -184,4 +184,158 @@ describe('BestElevenComponent', () => {
     const uniqueNames = new Set(playerNames);
     expect(uniqueNames.size).toBe(11);
   });
+
+  it('places locked player in the correct slot after calculation', () => {
+    const players = make11Players();
+    playersSubject.next(players);
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    // Lock "Striker 2" (uid=11) into slot 0 (GK slot)
+    const locks = new Array(11).fill(null) as (number | null)[];
+    locks[0] = 11; // uid of Striker 2
+    component.lockedPlayers.set(locks);
+
+    component.selectedRoles.set([
+      'SK', 'WB', 'BPD', 'BPD', 'WB', 'W', 'BBM', 'BBM', 'W', 'AF', 'AF',
+    ]);
+    fixture.detectChanges();
+
+    component.calculate();
+    fixture.detectChanges();
+
+    const result = component.result()!;
+    expect(result).not.toBeNull();
+    const gkEntry = result.find(e => e.slot === component['formation'][0]);
+    expect(gkEntry!.player.uid).toBe(11);
+  });
+
+  it('hides locked player from other slots availablePlayersForSlot', () => {
+    const players = make11Players();
+    playersSubject.next(players);
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    const locks = new Array(11).fill(null) as (number | null)[];
+    locks[0] = 1;
+    component.lockedPlayers.set(locks);
+    fixture.detectChanges();
+
+    const availableForSlot1 = component['availablePlayersForSlot']()[1];
+    expect(availableForSlot1.find(p => p.uid === 1)).toBeUndefined();
+  });
+
+  it('displays average score with 1 decimal after calculation', () => {
+    playersSubject.next(make11Players());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    component.selectedRoles.set([
+      'SK', 'WB', 'BPD', 'BPD', 'WB', 'W', 'BBM', 'BBM', 'W', 'AF', 'AF',
+    ]);
+    fixture.detectChanges();
+
+    component.calculate();
+    fixture.detectChanges();
+
+    const avgEl = element.querySelector('.average-score');
+    expect(avgEl).toBeTruthy();
+    expect(avgEl!.textContent).toContain('8.0');
+  });
+
+  it('shows placeholder before calculation', () => {
+    playersSubject.next(make11Players());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    const avgEl = element.querySelector('.average-score');
+    expect(avgEl).toBeTruthy();
+    expect(avgEl!.textContent).toContain('\u2014');
+  });
+
+  it('formats all result scores with exactly 1 decimal place', () => {
+    playersSubject.next(make11Players());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    component.selectedRoles.set([
+      'SK', 'WB', 'BPD', 'BPD', 'WB', 'W', 'BBM', 'BBM', 'W', 'AF', 'AF',
+    ]);
+    fixture.detectChanges();
+
+    component.calculate();
+    fixture.detectChanges();
+
+    const scoreEls = element.querySelectorAll('.result-score');
+    expect(scoreEls.length).toBe(11);
+    scoreEls.forEach(el => {
+      expect(el.textContent!.trim()).toMatch(/^\d+\.\d$/);
+    });
+  });
+
+  it('clears lock-in selections on reset', () => {
+    playersSubject.next(make11Players());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    const locks = new Array(11).fill(null) as (number | null)[];
+    locks[0] = 1;
+    component.lockedPlayers.set(locks);
+
+    component.selectedRoles.set([
+      'SK', 'WB', 'BPD', 'BPD', 'WB', 'W', 'BBM', 'BBM', 'W', 'AF', 'AF',
+    ]);
+    fixture.detectChanges();
+
+    component.calculate();
+    fixture.detectChanges();
+
+    const resetBtn = element.querySelector('.reset-btn') as HTMLButtonElement;
+    resetBtn.click();
+    fixture.detectChanges();
+
+    expect(component.result()).toBeNull();
+    expect(component.lockedPlayers().every(l => l === null)).toBe(true);
+  });
+
+  it('does not affect canCalculate when lock-in is set but role is missing', () => {
+    playersSubject.next(make11Players());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    const locks = new Array(11).fill(null) as (number | null)[];
+    locks[0] = 1;
+    component.lockedPlayers.set(locks);
+
+    fixture.detectChanges();
+
+    expect(component['canCalculate']()).toBe(false);
+  });
+
+  it('handles all 11 slots locked', () => {
+    const players = make11Players();
+    playersSubject.next(players);
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    const locks = players.map(p => p.uid);
+    component.lockedPlayers.set(locks);
+
+    component.selectedRoles.set([
+      'SK', 'WB', 'BPD', 'BPD', 'WB', 'W', 'BBM', 'BBM', 'W', 'AF', 'AF',
+    ]);
+    fixture.detectChanges();
+
+    component.calculate();
+    fixture.detectChanges();
+
+    const result = component.result()!;
+    expect(result).not.toBeNull();
+    expect(result.length).toBe(11);
+    result.forEach((entry, i) => {
+      const expectedSlot = component['formation'][i];
+      const matchingEntry = result.find(e => e.slot === expectedSlot);
+      expect(matchingEntry!.player.uid).toBe(players[i].uid);
+    });
+  });
 });
