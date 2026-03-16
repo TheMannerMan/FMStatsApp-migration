@@ -15,25 +15,22 @@
                 <span class="slot-label">{{ item.slot.label }}</span>
 
                 @if (!result()) {
-                  <p-select
-                    [options]="availableRolesForSlot()[item.index]"
-                    optionLabel="shortRoleName"
-                    optionValue="shortRoleName"
-                    placeholder="Select role"
-                    [ngModel]="selectedRoles()[item.index]"
-                    (ngModelChange)="onRoleChange(item.index, $event)"
-                    [style]="{ width: '100%' }"
-                  />
-                  <p-select
-                    [options]="availablePlayersForSlot()[item.index]"
-                    optionLabel="name"
-                    optionValue="uid"
-                    placeholder="Lock player (optional)"
-                    [ngModel]="lockedPlayers()[item.index]"
-                    (ngModelChange)="onLockChange(item.index, $event)"
-                    [showClear]="true"
-                    [style]="{ width: '100%' }"
-                  />
+                  <button
+                    pButton
+                    class="slot-role-btn"
+                    [label]="getRoleFullName(item.index) ?? 'Select Role'"
+                    severity="secondary"
+                    (click)="openRolePicker(item.index)"
+                  ></button>
+
+                  <button
+                    pButton
+                    class="slot-player-btn"
+                    [label]="getLockedPlayerName(item.index) ?? 'Lock Player (optional)'"
+                    severity="secondary"
+                    [disabled]="!selectedRoles()[item.index]"
+                    (click)="openPlayerPicker(item.index)"
+                  ></button>
                 } @else {
                   @if (getResultForSlot(item.index); as entry) {
                     <div class="result-card" [class]="getScoreClass(entry.score)">
@@ -108,4 +105,18 @@
       </div>
     }
   </div>
+
+  <app-role-picker-modal
+    [(visible)]="rolePickerVisibleValue"
+    [roles]="rolesForPickerModal()"
+    [selectedRole]="selectedRoleForPickerModal()"
+    (roleSelected)="onRolePickerSelect($event)"
+  />
+  <app-player-picker-modal
+    [(visible)]="playerPickerVisibleValue"
+    [players]="eligiblePlayersForModal()"
+    [selectedRole]="roleForPlayerModal()"
+    [selectedPlayerUid]="lockedPlayerUidForModal()"
+    (playerSelected)="onPlayerPickerSelect($event)"
+  />
 </div>

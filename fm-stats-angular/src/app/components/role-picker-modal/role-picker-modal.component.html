@@ -1,0 +1,46 @@
+<p-dialog
+  [visible]="visible"
+  (visibleChange)="visibleChange.emit($event)"
+  (onHide)="onDialogHide()"
+  header="Select Role"
+  [modal]="true"
+  [style]="{ width: '420px' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <div class="role-picker-content">
+    <input
+      class="role-search-input"
+      type="text"
+      placeholder="Search roles…"
+      [value]="searchTerm()"
+      (input)="onSearchInput($event)"
+      autocomplete="off"
+    />
+
+    <button
+      pButton
+      class="clear-selection-btn"
+      label="Clear selection"
+      severity="secondary"
+      (click)="clearSelection()"
+    ></button>
+
+    @if (filteredRoles().length === 0) {
+      <p class="empty-state">No roles found</p>
+    } @else {
+      <ul class="role-list">
+        @for (role of filteredRoles(); track role.shortRoleName) {
+          <li
+            class="role-item"
+            [class.role-item--selected]="role.shortRoleName === selectedRole"
+            (click)="selectRole(role)"
+          >
+            <span class="role-item-name">{{ role.roleName }}</span>
+            <span class="role-item-short">{{ role.shortRoleName }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</p-dialog>
