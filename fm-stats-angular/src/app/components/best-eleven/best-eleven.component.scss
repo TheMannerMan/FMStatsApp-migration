@@ -1,6 +1,6 @@
 .best-eleven-page {
   padding: 1rem 1.5rem;
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -17,6 +17,17 @@
   padding: 0.75rem 1rem;
   border-radius: 6px;
   margin-bottom: 1rem;
+}
+
+.page-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.formation-column {
+  flex: 1;
+  min-width: 0;
 }
 
 .formation-grid {
@@ -108,6 +119,77 @@
   display: flex;
   justify-content: center;
   margin-top: 1.5rem;
+}
+
+// ── Roster panel ────────────────────────────────────────────────────────────
+
+.roster-panel {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1rem;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.roster-heading {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.mark-all-btn {
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+.roster-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.player-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &.unmarked {
+    opacity: 0.5;
+
+    .player-row-name {
+      text-decoration: line-through;
+    }
+  }
+}
+
+.player-row-name {
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .page-layout {
+    flex-direction: column;
+  }
+
+  .roster-panel {
+    width: 100%;
+  }
 }
 
 @media (max-width: 600px) {
