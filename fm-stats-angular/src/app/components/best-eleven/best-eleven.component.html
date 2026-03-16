@@ -22,12 +22,22 @@
                 (ngModelChange)="onRoleChange(item.index, $event)"
                 [style]="{ width: '100%' }"
               />
+              <p-select
+                [options]="availablePlayersForSlot()[item.index]"
+                optionLabel="name"
+                optionValue="uid"
+                placeholder="Lock player (optional)"
+                [ngModel]="lockedPlayers()[item.index]"
+                (ngModelChange)="onLockChange(item.index, $event)"
+                [showClear]="true"
+                [style]="{ width: '100%' }"
+              />
             } @else {
               @if (getResultForSlot(item.index); as entry) {
                 <div class="result-card" [class]="getScoreClass(entry.score)">
                   <span class="result-name">{{ entry.player.name }}</span>
                   <span class="result-role">{{ entry.role }}</span>
-                  <span class="result-score">{{ entry.score }}</span>
+                  <span class="result-score">{{ entry.score | number:'1.1-1' }}</span>
                 </div>
               }
             }
@@ -37,13 +47,22 @@
     }
   </div>
 
+  <div class="average-score">
+    Average XI Score:
+    @if (averageScore() !== null) {
+      {{ averageScore() | number:'1.1-1' }}
+    } @else {
+      —
+    }
+  </div>
+
   <div class="actions">
     @if (result()) {
       <button
         pButton
         class="reset-btn"
         label="Reset"
-        (click)="result.set(null)"
+        (click)="reset()"
         severity="secondary"
       ></button>
     } @else {

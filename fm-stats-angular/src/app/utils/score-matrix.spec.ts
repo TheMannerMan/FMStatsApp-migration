@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getPlayerRoleScore, buildScoreMatrix } from './score-matrix';
+import { getPlayerRoleScore, buildScoreMatrix, buildConstrainedScoreMatrix } from './score-matrix';
 import { Player } from '../models/player.model';
 
 const makePlayer = (overrides: Partial<Player> = {}): Player => ({
@@ -126,5 +126,62 @@ describe('buildScoreMatrix', () => {
 
     // Player 1: AF=60, CF=0, DLF=90
     expect(matrix[1]).toEqual([60, 0, 90]);
+  });
+});
+
+describe('buildConstrainedScoreMatrix', () => {
+  const players = [
+    makePlayer({
+      uid: 1,
+      roles: [
+        { roleName: 'Advanced Forward', shortRoleName: 'AF', position: 'ST', roleScore: 9 },
+        { roleName: 'Complete Forward', shortRoleName: 'CF', position: 'ST', roleScore: 7 },
+      ],
+    }),
+    makePlayer({
+      uid: 2,
+      roles: [
+        { roleName: 'Advanced Forward', shortRoleName: 'AF', position: 'ST', roleScore: 6 },
+        { roleName: 'Complete Forward', shortRoleName: 'CF', position: 'ST', roleScore: 8 },
+      ],
+    }),
+    makePlayer({
+      uid: 3,
+      roles: [
+        { roleName: 'Advanced Forward', shortRoleName: 'AF', position: 'ST', roleScore: 5 },
+        { roleName: 'Complete Forward', shortRoleName: 'CF', position: 'ST', roleScore: 4 },
+      ],
+    }),
+  ];
+  const slotRoles = ['AF', 'CF'];
+
+  it('excludes locked player and slot from matrix, returns correct mappings', () => {
+    const result = buildConstrainedScoreMatrix(players, slotRoles, [
+      { slotIndex: 0, playerIndex: 0 },
+    ]);
+    expect(result.matrix).toEqual([[8], [4]]);
+    expect(result.rowMap).toEqual([1, 2]);
+    expect(result.colMap).toEqual([1]);
+  });
+
+  it('returns empty matrix when all slots are locked', () => {
+    const result = buildConstrainedScoreMatrix(players, slotRoles, [
+      { slotIndex: 0, playerIndex: 0 },
+      { slotIndex: 1, playerIndex: 1 },
+    ]);
+    expect(result.matrix).toEqual([]);
+    expect(result.rowMap).toEqual([]);
+    expect(result.colMap).toEqual([]);
+  });
+
+  it('returns full matrix with identity mappings when no locks', () => {
+    const result = buildConstrainedScoreMatrix(players, slotRoles, []);
+    expect(result.matrix).toEqual([
+      [9, 7],
+      [6, 8],
+      [5, 4],
+    ]);
+    expect(result.rowMap).toEqual([0, 1, 2]);
+    expect(result.colMap).toEqual([0, 1]);
   });
 });
