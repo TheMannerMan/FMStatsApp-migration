@@ -8,8 +8,8 @@ import { PlayerService } from '../../services/player.service';
 import { Player } from '../../models/player.model';
 import { RoleInfo } from '../../models/role-group.model';
 import { FORMATION_442, FormationSlot } from '../../models/formation.model';
-import { buildScoreMatrix, getPlayerRoleScore, buildConstrainedScoreMatrix } from '../../utils/score-matrix';
-import { hungarian, Assignment } from '../../utils/hungarian';
+import { getPlayerRoleScore, buildConstrainedScoreMatrix } from '../../utils/score-matrix';
+import { hungarian } from '../../utils/hungarian';
 
 export interface ResultEntry {
   slot: FormationSlot;
