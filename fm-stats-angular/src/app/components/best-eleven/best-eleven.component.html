@@ -5,74 +5,107 @@
     <p class="warning-message">At least 11 players must be uploaded</p>
   }
 
-  <div class="formation-grid">
-    @for (row of formationRows; track row) {
-      <div class="formation-row" [attr.data-row]="row">
-        @for (item of slotsInRow(row); track item.index) {
-          <div class="slot-card">
-            <span class="slot-label">{{ item.slot.label }}</span>
+  <div class="page-layout">
+    <div class="formation-column">
+      <div class="formation-grid">
+        @for (row of formationRows; track row) {
+          <div class="formation-row" [attr.data-row]="row">
+            @for (item of slotsInRow(row); track item.index) {
+              <div class="slot-card">
+                <span class="slot-label">{{ item.slot.label }}</span>
 
-            @if (!result()) {
-              <p-select
-                [options]="availableRolesForSlot()[item.index]"
-                optionLabel="shortRoleName"
-                optionValue="shortRoleName"
-                placeholder="Select role"
-                [ngModel]="selectedRoles()[item.index]"
-                (ngModelChange)="onRoleChange(item.index, $event)"
-                [style]="{ width: '100%' }"
-              />
-              <p-select
-                [options]="availablePlayersForSlot()[item.index]"
-                optionLabel="name"
-                optionValue="uid"
-                placeholder="Lock player (optional)"
-                [ngModel]="lockedPlayers()[item.index]"
-                (ngModelChange)="onLockChange(item.index, $event)"
-                [showClear]="true"
-                [style]="{ width: '100%' }"
-              />
-            } @else {
-              @if (getResultForSlot(item.index); as entry) {
-                <div class="result-card" [class]="getScoreClass(entry.score)">
-                  <span class="result-name">{{ entry.player.name }}</span>
-                  <span class="result-role">{{ entry.role }}</span>
-                  <span class="result-score">{{ entry.score | number:'1.1-1' }}</span>
-                </div>
-              }
+                @if (!result()) {
+                  <p-select
+                    [options]="availableRolesForSlot()[item.index]"
+                    optionLabel="shortRoleName"
+                    optionValue="shortRoleName"
+                    placeholder="Select role"
+                    [ngModel]="selectedRoles()[item.index]"
+                    (ngModelChange)="onRoleChange(item.index, $event)"
+                    [style]="{ width: '100%' }"
+                  />
+                  <p-select
+                    [options]="availablePlayersForSlot()[item.index]"
+                    optionLabel="name"
+                    optionValue="uid"
+                    placeholder="Lock player (optional)"
+                    [ngModel]="lockedPlayers()[item.index]"
+                    (ngModelChange)="onLockChange(item.index, $event)"
+                    [showClear]="true"
+                    [style]="{ width: '100%' }"
+                  />
+                } @else {
+                  @if (getResultForSlot(item.index); as entry) {
+                    <div class="result-card" [class]="getScoreClass(entry.score)">
+                      <span class="result-name">{{ entry.player.name }}</span>
+                      <span class="result-role">{{ entry.role }}</span>
+                      <span class="result-score">{{ entry.score | number:'1.1-1' }}</span>
+                    </div>
+                  }
+                }
+              </div>
             }
           </div>
         }
       </div>
-    }
-  </div>
 
-  <div class="average-score">
-    Average XI Score:
-    @if (averageScore() !== null) {
-      {{ averageScore() | number:'1.1-1' }}
-    } @else {
-      —
-    }
-  </div>
+      <div class="average-score">
+        Average XI Score:
+        @if (averageScore() !== null) {
+          {{ averageScore() | number:'1.1-1' }}
+        } @else {
+          —
+        }
+      </div>
 
-  <div class="actions">
-    @if (result()) {
-      <button
-        pButton
-        class="reset-btn"
-        label="Reset"
-        (click)="reset()"
-        severity="secondary"
-      ></button>
-    } @else {
-      <button
-        pButton
-        class="calculate-btn"
-        label="Calculate Best XI"
-        (click)="calculate()"
-        [disabled]="!canCalculate()"
-      ></button>
+      <div class="actions">
+        @if (result()) {
+          <button
+            pButton
+            class="reset-btn"
+            label="Reset"
+            (click)="reset()"
+            severity="secondary"
+          ></button>
+        } @else {
+          <button
+            pButton
+            class="calculate-btn"
+            label="Calculate Best XI"
+            (click)="calculate()"
+            [disabled]="!canCalculate()"
+          ></button>
+        }
+      </div>
+    </div>
+
+    @if (players().length > 0) {
+      <div class="roster-panel">
+        <h3 class="roster-heading">Squad</h3>
+        <button
+          pButton
+          class="mark-all-btn"
+          label="Mark All"
+          severity="secondary"
+          [disabled]="allMarked()"
+          (click)="markAll()"
+        ></button>
+        <div class="roster-list">
+          @for (player of players(); track player.uid) {
+            <div class="player-row" [class.unmarked]="!markedPlayerUids().has(player.uid)">
+              <span class="player-row-name">{{ player.name }}</span>
+              <button
+                pButton
+                class="toggle-mark-btn"
+                [label]="markedPlayerUids().has(player.uid) ? 'Unmark' : 'Mark'"
+                severity="secondary"
+                size="small"
+                (click)="toggleMark(player.uid)"
+              ></button>
+            </div>
+          }
+        </div>
+      </div>
     }
   </div>
 </div>

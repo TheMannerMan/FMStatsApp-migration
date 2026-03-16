@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal } from '@angular/core';
+import { Component, inject, computed, signal, effect } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -27,6 +27,7 @@ export interface ResultEntry {
 })
 export class BestElevenComponent {
   private playerService = inject(PlayerService);
+  private readonly STORAGE_KEY = 'best_xi_marked_players';
 
   protected players = toSignal(this.playerService.players$, { initialValue: [] as Player[] });
   protected roles = this.playerService.roles;
@@ -36,8 +37,21 @@ export class BestElevenComponent {
   selectedRoles = signal<(string | null)[]>(new Array(11).fill(null));
   lockedPlayers = signal<(number | null)[]>(new Array(11).fill(null));
   result = signal<ResultEntry[] | null>(null);
+  markedPlayerUids = signal<Set<number>>(new Set());
 
-  protected hasEnoughPlayers = computed(() => this.players().length >= 11);
+  protected allMarked = computed(() =>
+    this.markedPlayerUids().size === this.players().length && this.players().length > 0
+  );
+
+  protected eligiblePlayers = computed(() => {
+    const marked = this.markedPlayerUids();
+    const lockedUids = new Set(
+      this.lockedPlayers().filter((uid): uid is number => uid !== null)
+    );
+    return this.players().filter(p => marked.has(p.uid) || lockedUids.has(p.uid));
+  });
+
+  protected hasEnoughPlayers = computed(() => this.eligiblePlayers().length >= 11);
 
   protected canCalculate = computed(() => {
     if (!this.hasEnoughPlayers()) return false;
@@ -68,6 +82,64 @@ export class BestElevenComponent {
       allRoles.filter(r => r.positions.includes(slot.position))
     );
   });
+
+  constructor() {
+    const stored = localStorage.getItem(this.STORAGE_KEY);
+    let storedMarked: Set<number> | null = null;
+    if (stored) {
+      try {
+        storedMarked = new Set(JSON.parse(stored) as number[]);
+      } catch { /* ignore invalid stored data */ }
+    }
+
+    let prevPlayerUids = new Set<number>();
+    let initialized = false;
+
+    effect(() => {
+      const current = this.players();
+      if (current.length === 0) return;
+
+      const currentUids = new Set(current.map(p => p.uid));
+
+      if (!initialized) {
+        initialized = true;
+        if (storedMarked !== null) {
+          const intersected = new Set([...storedMarked].filter(uid => currentUids.has(uid)));
+          this.markedPlayerUids.set(intersected);
+        } else {
+          this.markedPlayerUids.set(new Set(currentUids));
+        }
+      } else {
+        const uidsDiffer =
+          currentUids.size !== prevPlayerUids.size ||
+          [...currentUids].some(uid => !prevPlayerUids.has(uid));
+        if (uidsDiffer) {
+          this.markedPlayerUids.set(new Set(currentUids));
+        }
+      }
+
+      prevPlayerUids = currentUids;
+    });
+
+    effect(() => {
+      const marked = this.markedPlayerUids();
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify([...marked]));
+    });
+  }
+
+  toggleMark(uid: number): void {
+    const current = new Set(this.markedPlayerUids());
+    if (current.has(uid)) {
+      current.delete(uid);
+    } else {
+      current.add(uid);
+    }
+    this.markedPlayerUids.set(current);
+  }
+
+  markAll(): void {
+    this.markedPlayerUids.set(new Set(this.players().map(p => p.uid)));
+  }
 
   protected slotsInRow(row: number): { slot: FormationSlot; index: number }[] {
     return this.formation
@@ -102,7 +174,7 @@ export class BestElevenComponent {
 
   calculate(): void {
     if (!this.canCalculate()) return;
-    const players = this.players();
+    const players = this.eligiblePlayers();
     const slotRoles = this.selectedRoles() as string[];
     const locks = this.lockedPlayers();
 
