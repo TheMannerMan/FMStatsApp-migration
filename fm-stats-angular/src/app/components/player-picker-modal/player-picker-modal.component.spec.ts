@@ -217,4 +217,102 @@ describe('PlayerPickerModalComponent', () => {
     const allContent = document.body.textContent ?? '';
     expect(allContent).toContain('No players found');
   });
+
+  // ── Sorting ──────────────────────────────────────────────────────────────
+
+  describe('sorting', () => {
+    const alpha = makePlayer(1, 'Alice', 'GK', [{ shortRoleName: 'SK', roleScore: 9 }]);
+    const beta  = makePlayer(2, 'Bob',   'DC', [{ shortRoleName: 'SK', roleScore: 6 }]);
+    const gamma = makePlayer(3, 'Charlie', 'AM', [{ shortRoleName: 'SK', roleScore: 7.5 }]);
+
+    beforeEach(() => {
+      // Provide in reverse alphabetical order to confirm sorting is applied
+      component.players = [gamma, beta, alpha];
+      fixture.detectChanges();
+    });
+
+    it('default sort is Name ascending (A→Z)', () => {
+      const names = component.filteredPlayers().map(p => p.name);
+      expect(names).toEqual(['Alice', 'Bob', 'Charlie']);
+    });
+
+    it('Name descending sorts Z→A', () => {
+      component.setSortColumn('name'); // toggle: asc → desc
+      const names = component.filteredPlayers().map(p => p.name);
+      expect(names).toEqual(['Charlie', 'Bob', 'Alice']);
+    });
+
+    it('Position ascending sorts A→Z by position string', () => {
+      component.setSortColumn('position');
+      const positions = component.filteredPlayers().map(p => p.position);
+      expect(positions).toEqual(['AM', 'DC', 'GK']);
+    });
+
+    it('Position descending sorts Z→A by position string', () => {
+      component.setSortColumn('position');
+      component.setSortColumn('position'); // toggle: asc → desc
+      const positions = component.filteredPlayers().map(p => p.position);
+      expect(positions).toEqual(['GK', 'DC', 'AM']);
+    });
+
+    it('Rating descending (default) puts highest score first', () => {
+      component.selectedRole = 'SK';
+      component.setSortColumn('rating');
+      const scores = component.filteredPlayers().map(p => component.getScore(p));
+      expect(scores).toEqual([9, 7.5, 6]);
+    });
+
+    it('Rating ascending puts lowest score first', () => {
+      component.selectedRole = 'SK';
+      component.setSortColumn('rating');
+      component.setSortColumn('rating'); // toggle: desc → asc
+      const scores = component.filteredPlayers().map(p => component.getScore(p));
+      expect(scores).toEqual([6, 7.5, 9]);
+    });
+
+    it('clicking Rating when selectedRole is null does not change sort state', () => {
+      component.selectedRole = null;
+      component.setSortColumn('rating');
+      expect(component.sortColumn()).toBe('name');
+      expect(component.sortDirection()).toBe('asc');
+    });
+
+    it('search filter combined with active sort: returns only matching players in sorted order', () => {
+      component.searchTerm.set('a'); // matches Alice, Charlie
+      const names = component.filteredPlayers().map(p => p.name);
+      expect(names).toEqual(['Alice', 'Charlie']);
+    });
+
+    it('toggling the active column cycles asc → desc → asc', () => {
+      expect(component.sortDirection()).toBe('asc');
+      component.setSortColumn('name');
+      expect(component.sortDirection()).toBe('desc');
+      component.setSortColumn('name');
+      expect(component.sortDirection()).toBe('asc');
+    });
+
+    it('switching to a new column resets direction to default (asc for Name/Position)', () => {
+      component.setSortColumn('name'); // now desc
+      component.setSortColumn('position'); // new column → resets to asc
+      expect(component.sortColumn()).toBe('position');
+      expect(component.sortDirection()).toBe('asc');
+    });
+
+    it('switching to Rating column defaults to descending', () => {
+      component.selectedRole = 'SK';
+      component.setSortColumn('rating');
+      expect(component.sortColumn()).toBe('rating');
+      expect(component.sortDirection()).toBe('desc');
+    });
+
+    it('players with equal position fall back to Name ascending as stable tiebreak', () => {
+      component.players = [
+        makePlayer(10, 'Zara', 'DC', []),
+        makePlayer(11, 'Anna', 'DC', []),
+      ];
+      component.setSortColumn('position');
+      const names = component.filteredPlayers().map(p => p.name);
+      expect(names).toEqual(['Anna', 'Zara']);
+    });
+  });
 });

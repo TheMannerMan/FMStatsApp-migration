@@ -28,26 +28,68 @@
 
     @if (!hasPlayers()) {
       <p class="empty-state">No eligible players. Mark players in the roster panel.</p>
-    } @else if (filteredPlayers().length === 0) {
-      <p class="empty-state">No players found</p>
     } @else {
-      <ul class="player-list">
-        @for (player of filteredPlayers(); track player.uid) {
-          <li
-            class="player-item"
-            [class.player-item--selected]="player.uid === selectedPlayerUid"
-            (click)="selectPlayer(player.uid)"
+      <div class="sort-header">
+        <button
+          type="button"
+          class="sort-btn"
+          [class.sort-btn--active]="sortColumn() === 'name'"
+          (click)="setSortColumn('name')"
+        >
+          Name
+          @if (sortColumn() === 'name') {
+            <span class="sort-arrow">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
+          }
+        </button>
+        <div class="sort-header-right">
+          <button
+            type="button"
+            class="sort-btn"
+            [class.sort-btn--active]="sortColumn() === 'position'"
+            (click)="setSortColumn('position')"
           >
-            <span class="player-item-name">{{ player.name }}</span>
-            <span class="player-item-meta">
-              <span class="player-item-position">{{ player.position }}</span>
-              @if (selectedRole) {
-                <span class="player-item-score">{{ getScore(player) | number:'1.1-1' }}</span>
-              }
-            </span>
-          </li>
-        }
-      </ul>
+            Pos
+            @if (sortColumn() === 'position') {
+              <span class="sort-arrow">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
+            }
+          </button>
+          <button
+            type="button"
+            class="sort-btn"
+            [class.sort-btn--active]="sortColumn() === 'rating'"
+            [class.sort-btn--disabled]="!selectedRole"
+            [disabled]="!selectedRole"
+            (click)="setSortColumn('rating')"
+          >
+            Rating
+            @if (sortColumn() === 'rating') {
+              <span class="sort-arrow">{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span>
+            }
+          </button>
+        </div>
+      </div>
+
+      @if (filteredPlayers().length === 0) {
+        <p class="empty-state">No players found</p>
+      } @else {
+        <ul class="player-list">
+          @for (player of filteredPlayers(); track player.uid) {
+            <li
+              class="player-item"
+              [class.player-item--selected]="player.uid === selectedPlayerUid"
+              (click)="selectPlayer(player.uid)"
+            >
+              <span class="player-item-name">{{ player.name }}</span>
+              <span class="player-item-meta">
+                <span class="player-item-position">{{ player.position }}</span>
+                @if (selectedRole) {
+                  <span class="player-item-score">{{ getScore(player) | number:'1.1-1' }}</span>
+                }
+              </span>
+            </li>
+          }
+        </ul>
+      }
     }
   </div>
 </p-dialog>
