@@ -13,14 +13,14 @@ Extend the existing Best XI feature in `BestElevenComponent` with two enhancemen
 
 ## Open Questions
 > These questions must be answered before implementation can begin.
-- Should locking a player to a slot also lock the role, or should the role remain selectable independently while only the player assignment is fixed?
-- If a player is locked into slot A, should they still appear as an option in the lock-in dropdowns for other slots, or be hidden to prevent double-assignment?
+- Should locking a player to a slot also lock the role, or should the role remain selectable independently while only the player assignment is fixed? The role should not be locked after locking a player.
+- If a player is locked into slot A, should they still appear as an option in the lock-in dropdowns for other slots, or be hidden to prevent double-assignment? Hidden.
 
 ## Clarifications Needed
 > Minor ambiguities that can be resolved during implementation, but worth flagging.
-- Should the lock-in selections persist after clicking "Reset", or reset together with the result?
-- Visual placement of the lock-in dropdown: below the role selector inside the same slot card, or a separate row?
-- Should the average score be hidden until a result is computed, or show a placeholder (e.g. `—`) before calculation?
+- Should the lock-in selections persist after clicking "Reset", or reset together with the result? Right now, reset everything
+- Visual placement of the lock-in dropdown: below the role selector inside the same slot card, or a separate row? Below
+- Should the average score be hidden until a result is computed, or show a placeholder (e.g. `—`) before calculation? Placeholder is fine
 
 ## Functional Requirements
 - Each of the 11 formation slot cards shows an optional player lock-in dropdown populated with all uploaded players.
