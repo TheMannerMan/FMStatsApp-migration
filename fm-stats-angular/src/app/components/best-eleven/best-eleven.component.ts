@@ -8,7 +8,7 @@ import { PlayerService } from '../../services/player.service';
 import { Player } from '../../models/player.model';
 import { RoleInfo } from '../../models/role-group.model';
 import { FORMATION_442, FormationSlot } from '../../models/formation.model';
-import { buildScoreMatrix } from '../../utils/score-matrix';
+import { buildScoreMatrix, getPlayerRoleScore, buildConstrainedScoreMatrix } from '../../utils/score-matrix';
 import { hungarian, Assignment } from '../../utils/hungarian';
 
 export interface ResultEntry {
@@ -34,6 +34,7 @@ export class BestElevenComponent {
   protected formationRows = [...new Set(FORMATION_442.map(s => s.row))].sort((a, b) => a - b);
 
   selectedRoles = signal<(string | null)[]>(new Array(11).fill(null));
+  lockedPlayers = signal<(number | null)[]>(new Array(11).fill(null));
   result = signal<ResultEntry[] | null>(null);
 
   protected hasEnoughPlayers = computed(() => this.players().length >= 11);
@@ -41,6 +42,23 @@ export class BestElevenComponent {
   protected canCalculate = computed(() => {
     if (!this.hasEnoughPlayers()) return false;
     return this.selectedRoles().every(r => r !== null);
+  });
+
+  protected availablePlayersForSlot = computed(() => {
+    const allPlayers = this.players();
+    const locks = this.lockedPlayers();
+    return this.formation.map((_, slotIndex) => {
+      const lockedUids = new Set(
+        locks.filter((uid, i) => uid !== null && i !== slotIndex)
+      );
+      return allPlayers.filter(p => !lockedUids.has(p.uid));
+    });
+  });
+
+  protected averageScore = computed(() => {
+    const res = this.result();
+    if (!res) return null;
+    return res.reduce((sum, e) => sum + e.score, 0) / res.length;
   });
 
   protected availableRolesForSlot = computed(() => {
@@ -64,27 +82,66 @@ export class BestElevenComponent {
     this.result.set(null);
   }
 
+  protected onLockChange(slotIndex: number, playerUid: number | null): void {
+    const current = [...this.lockedPlayers()];
+    current[slotIndex] = playerUid;
+    this.lockedPlayers.set(current);
+    this.result.set(null);
+  }
+
+  protected reset(): void {
+    this.result.set(null);
+    this.lockedPlayers.set(new Array(11).fill(null));
+  }
+
   protected getScoreClass(score: number): string {
     if (score >= 8.0) return 'score-high';
     if (score >= 6.0) return 'score-medium';
     return 'score-low';
   }
 
-  protected calculate(): void {
+  calculate(): void {
     if (!this.canCalculate()) return;
     const players = this.players();
     const slotRoles = this.selectedRoles() as string[];
-    const matrix = buildScoreMatrix(players, slotRoles);
-    const assignments: Assignment[] = hungarian(matrix);
+    const locks = this.lockedPlayers();
 
-    const entries: ResultEntry[] = assignments.map(a => ({
-      slot: this.formation[a.slotIndex],
-      player: players[a.playerIndex],
-      role: slotRoles[a.slotIndex],
-      score: a.score,
+    // Build locked pairs
+    const lockedPairs: { slotIndex: number; playerIndex: number }[] = [];
+    locks.forEach((uid, slotIndex) => {
+      if (uid !== null) {
+        const playerIndex = players.findIndex(p => p.uid === uid);
+        if (playerIndex >= 0) {
+          lockedPairs.push({ slotIndex, playerIndex });
+        }
+      }
+    });
+
+    // Pre-build locked entries
+    const lockedEntries: ResultEntry[] = lockedPairs.map(lp => ({
+      slot: this.formation[lp.slotIndex],
+      player: players[lp.playerIndex],
+      role: slotRoles[lp.slotIndex],
+      score: getPlayerRoleScore(players[lp.playerIndex], slotRoles[lp.slotIndex]),
     }));
 
-    this.result.set(entries);
+    // Build constrained matrix and run Hungarian on free slots
+    const { matrix, rowMap, colMap } = buildConstrainedScoreMatrix(
+      players, slotRoles, lockedPairs
+    );
+
+    let freeEntries: ResultEntry[] = [];
+    if (matrix.length > 0 && matrix[0]?.length > 0) {
+      const assignments = hungarian(matrix);
+      freeEntries = assignments.map(a => ({
+        slot: this.formation[colMap[a.slotIndex]],
+        player: players[rowMap[a.playerIndex]],
+        role: slotRoles[colMap[a.slotIndex]],
+        score: a.score,
+      }));
+    }
+
+    this.result.set([...lockedEntries, ...freeEntries]);
   }
 
   protected getResultForSlot(slotIndex: number): ResultEntry | undefined {
