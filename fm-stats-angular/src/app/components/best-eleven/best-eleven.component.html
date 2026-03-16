@@ -1,0 +1,59 @@
+<div class="best-eleven-page">
+  <h2 class="page-title">Best XI</h2>
+
+  @if (!hasEnoughPlayers()) {
+    <p class="warning-message">At least 11 players must be uploaded</p>
+  }
+
+  <div class="formation-grid">
+    @for (row of formationRows; track row) {
+      <div class="formation-row" [attr.data-row]="row">
+        @for (item of slotsInRow(row); track item.index) {
+          <div class="slot-card">
+            <span class="slot-label">{{ item.slot.label }}</span>
+
+            @if (!result()) {
+              <p-select
+                [options]="availableRolesForSlot()[item.index]"
+                optionLabel="shortRoleName"
+                optionValue="shortRoleName"
+                placeholder="Select role"
+                [ngModel]="selectedRoles()[item.index]"
+                (ngModelChange)="onRoleChange(item.index, $event)"
+                [style]="{ width: '100%' }"
+              />
+            } @else {
+              @if (getResultForSlot(item.index); as entry) {
+                <div class="result-card" [class]="getScoreClass(entry.score)">
+                  <span class="result-name">{{ entry.player.name }}</span>
+                  <span class="result-role">{{ entry.role }}</span>
+                  <span class="result-score">{{ entry.score }}</span>
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="actions">
+    @if (result()) {
+      <button
+        pButton
+        class="reset-btn"
+        label="Reset"
+        (click)="result.set(null)"
+        severity="secondary"
+      ></button>
+    } @else {
+      <button
+        pButton
+        class="calculate-btn"
+        label="Calculate Best XI"
+        (click)="calculate()"
+        [disabled]="!canCalculate()"
+      ></button>
+    }
+  </div>
+</div>

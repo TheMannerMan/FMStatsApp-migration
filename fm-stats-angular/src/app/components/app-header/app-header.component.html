@@ -6,5 +6,8 @@
   <nav class="app-header__nav">
     <a routerLink="/upload" routerLinkActive="active" class="app-header__nav-link">Upload</a>
     <a routerLink="/players" routerLinkActive="active" class="app-header__nav-link">Players</a>
+    @if (hasPlayers()) {
+      <a routerLink="/best-eleven" routerLinkActive="active" class="app-header__nav-link">Best XI</a>
+    }
   </nav>
 </header>
