@@ -96,6 +96,14 @@
   color: var(--color-score-low-text);
 }
 
+.average-score {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
 .actions {
   display: flex;
   justify-content: center;
