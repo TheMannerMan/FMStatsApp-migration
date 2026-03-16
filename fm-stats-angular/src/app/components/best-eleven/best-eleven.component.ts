@@ -31,7 +31,7 @@ export class BestElevenComponent {
   protected players = toSignal(this.playerService.players$, { initialValue: [] as Player[] });
   protected roles = this.playerService.roles;
   protected formation = FORMATION_442;
-  protected formationRows = [...new Set(FORMATION_442.map(s => s.row))];
+  protected formationRows = [...new Set(FORMATION_442.map(s => s.row))].sort((a, b) => a - b);
 
   selectedRoles = signal<(string | null)[]>(new Array(11).fill(null));
   result = signal<ResultEntry[] | null>(null);
@@ -70,7 +70,7 @@ export class BestElevenComponent {
     return 'score-low';
   }
 
-  calculate(): void {
+  protected calculate(): void {
     if (!this.canCalculate()) return;
     const players = this.players();
     const slotRoles = this.selectedRoles() as string[];
