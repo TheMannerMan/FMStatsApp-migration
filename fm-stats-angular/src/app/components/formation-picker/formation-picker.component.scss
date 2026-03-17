@@ -1,0 +1,38 @@
+.formation-picker-page {
+  padding: 2rem;
+}
+
+.page-title {
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.formation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.formation-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: var(--surface-card, #1e1e2e);
+  border: 1px solid var(--surface-border, #333);
+  border-radius: 8px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-color, #fff);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: var(--surface-hover, #2a2a3e);
+    border-color: var(--primary-color, #6366f1);
+  }
+}

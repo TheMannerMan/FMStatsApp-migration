@@ -1,5 +1,8 @@
 <div class="best-eleven-page">
-  <h2 class="page-title">Best XI</h2>
+  <h2 class="page-title">
+    <a routerLink="/best-eleven" class="back-link">&larr;</a>
+    Best XI &mdash; {{ formationSlug() }}
+  </h2>
 
   @if (!hasEnoughPlayers()) {
     <p class="warning-message">At least 11 players must be uploaded</p>
@@ -8,7 +11,7 @@
   <div class="page-layout">
     <div class="formation-column">
       <div class="formation-grid">
-        @for (row of formationRows; track row) {
+        @for (row of formationRows(); track row) {
           <div class="formation-row" [attr.data-row]="row">
             @for (item of slotsInRow(row); track item.index) {
               <div class="slot-card">
