@@ -297,11 +297,11 @@ export class BestElevenComponent {
     return a.localeCompare(b, undefined, { sensitivity: 'base' });
   }
 
-  onSearchInput(event: Event): void {
+  protected onSearchInput(event: Event): void {
     this.searchQuery.set((event.target as HTMLInputElement).value);
   }
 
-  toggleSort(col: 'name' | 'position'): void {
+  protected toggleSort(col: 'name' | 'position'): void {
     if (this.sortColumn() === col) {
       this.sortDirection.update(d => (d === 'asc' ? 'desc' : 'asc'));
     } else {
