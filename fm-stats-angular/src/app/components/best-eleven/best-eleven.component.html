@@ -97,24 +97,60 @@
         <button
           pButton
           class="mark-all-btn"
-          label="Mark All"
+          label="Reset"
           severity="secondary"
           [disabled]="allMarked()"
           (click)="markAll()"
         ></button>
+        <input
+          pInputText
+          type="text"
+          class="roster-search"
+          placeholder="Search players..."
+          (input)="onSearchInput($event)"
+        />
+        <div class="roster-column-headers">
+          <span
+            class="sort-header sort-header-name"
+            [class.active]="sortColumn() === 'name'"
+            (click)="toggleSort('name')"
+          >
+            Name
+            @if (sortColumn() === 'name') {
+              {{ sortDirection() === 'asc' ? '↑' : '↓' }}
+            }
+          </span>
+          <span
+            class="sort-header sort-header-position"
+            [class.active]="sortColumn() === 'position'"
+            (click)="toggleSort('position')"
+          >
+            Position
+            @if (sortColumn() === 'position') {
+              {{ sortDirection() === 'asc' ? '↑' : '↓' }}
+            }
+          </span>
+          <span class="sort-header-spacer" aria-hidden="true"></span>
+        </div>
         <div class="roster-list">
-          @for (player of players(); track player.uid) {
+          @for (player of rosterPlayers(); track player.uid) {
             <div class="player-row" [class.unmarked]="!markedPlayerUids().has(player.uid)">
               <span class="player-row-name">{{ player.name }}</span>
+              <span class="player-row-position">{{ player.position }}</span>
               <button
                 pButton
                 class="toggle-mark-btn"
+                [class.unmark-mode]="markedPlayerUids().has(player.uid)"
                 [label]="markedPlayerUids().has(player.uid) ? 'Unmark' : 'Mark'"
                 severity="secondary"
+                [text]="markedPlayerUids().has(player.uid)"
                 size="small"
                 (click)="toggleMark(player.uid)"
               ></button>
             </div>
+          }
+          @if (rosterPlayers().length === 0) {
+            <p class="roster-empty-message">No players found</p>
           }
         </div>
       </div>

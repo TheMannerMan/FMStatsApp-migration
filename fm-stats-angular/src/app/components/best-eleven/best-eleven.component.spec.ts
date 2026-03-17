@@ -381,7 +381,7 @@ describe('BestElevenComponent', () => {
     make11Players().forEach(p => expect(marked.has(p.uid)).toBe(true));
   });
 
-  it('Mark All button is disabled when all players are already marked', () => {
+  it('Reset button is disabled when all players are already marked', () => {
     playersSubject.next(make11Players());
     rolesSignal.set(makeRoles());
     fixture.detectChanges();
@@ -389,6 +389,7 @@ describe('BestElevenComponent', () => {
     const btn = element.querySelector('.mark-all-btn') as HTMLButtonElement;
     expect(btn).toBeTruthy();
     expect(btn.disabled).toBe(true);
+    expect(btn.textContent?.trim()).toContain('Reset');
   });
 
   // ── Step 2: eligiblePlayers + hasEnoughPlayers ────────────────────────────
@@ -534,6 +535,29 @@ describe('BestElevenComponent', () => {
     const rows = element.querySelectorAll('.player-row');
     const unmarkedRows = Array.from(rows).filter(r => r.classList.contains('unmarked'));
     expect(unmarkedRows.length).toBe(1);
+  });
+
+  it('Unmark button has unmark-mode class when player is marked', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const firstRow = element.querySelector('.player-row') as HTMLElement;
+    const btn = firstRow.querySelector('.toggle-mark-btn') as HTMLElement;
+    expect(btn.classList.contains('unmark-mode')).toBe(true);
+  });
+
+  it('Mark button does not have unmark-mode class when player is unmarked', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    component.toggleMark(1); // unmark player 1 (Keeper — moves to bottom due to grouping)
+    fixture.detectChanges();
+
+    // Unmarked players are grouped at the bottom; find the unmarked row directly
+    const unmarkedRow = element.querySelector('.player-row.unmarked') as HTMLElement;
+    expect(unmarkedRow).toBeTruthy();
+    const btn = unmarkedRow.querySelector('.toggle-mark-btn') as HTMLElement;
+    expect(btn.classList.contains('unmark-mode')).toBe(false);
   });
 
   it('does not render roster panel when no players are uploaded', () => {
@@ -721,6 +745,86 @@ describe('BestElevenComponent', () => {
     expect(component['canCalculate']()).toBe(true);
   });
 
+  // ── Task 3: Grouping + Search ─────────────────────────────────────────────
+
+  it('marked players appear before unmarked players in the roster list', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    // Unmark players 1 and 2 (first two)
+    component.toggleMark(1);
+    component.toggleMark(2);
+    fixture.detectChanges();
+
+    const rows = Array.from(element.querySelectorAll('.player-row'));
+    const unmarkedRows = rows.filter(r => r.classList.contains('unmarked'));
+    const markedRows = rows.filter(r => !r.classList.contains('unmarked'));
+
+    expect(markedRows.length).toBe(9);
+    expect(unmarkedRows.length).toBe(2);
+
+    // All unmarked rows must appear after all marked rows in DOM order
+    const firstUnmarkedIndex = rows.indexOf(unmarkedRows[0]);
+    const lastMarkedIndex = rows.indexOf(markedRows[markedRows.length - 1]);
+    expect(firstUnmarkedIndex).toBeGreaterThan(lastMarkedIndex);
+  });
+
+  it('search filters players by partial name match (case-insensitive)', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    component.searchQuery.set('keeper');
+    fixture.detectChanges();
+
+    const rows = element.querySelectorAll('.player-row');
+    expect(rows.length).toBe(1);
+    expect(rows[0].textContent).toContain('Keeper');
+  });
+
+  it('search shows no results message when query matches nothing', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    component.searchQuery.set('zzznomatch');
+    fixture.detectChanges();
+
+    const rows = element.querySelectorAll('.player-row');
+    expect(rows.length).toBe(0);
+
+    const msg = element.querySelector('.roster-empty-message');
+    expect(msg).toBeTruthy();
+    expect(msg!.textContent).toContain('No players found');
+  });
+
+  it('search results with unmarked player remain grouped at the bottom', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    // Unmark Keeper (uid=1)
+    component.toggleMark(1);
+    // 'striker' matches Striker 1 (uid=10) and Striker 2 (uid=11) — both marked
+    component.searchQuery.set('striker');
+    fixture.detectChanges();
+
+    // 'striker' does not match Keeper — only the 2 marked Strikers are visible
+    const rows = Array.from(element.querySelectorAll('.player-row'));
+    expect(rows.length).toBe(2);
+    expect(rows.every(r => !r.classList.contains('unmarked'))).toBe(true);
+  });
+
+  it('search with unmarked match keeps it at the bottom', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    component.toggleMark(1); // unmark Keeper
+    component.searchQuery.set('keeper');
+    fixture.detectChanges();
+
+    const rows = Array.from(element.querySelectorAll('.player-row'));
+    expect(rows.length).toBe(1);
+    expect(rows[0].classList.contains('unmarked')).toBe(true);
+  });
+
   it('canCalculate false when locked player in ineligible slot and no eligible players remain for that slot', () => {
     // Use players with positions but assign the ONE ST-eligible player to a non-ST slot
     // Only 2 ST-eligible players (uids 10, 11). Lock both into non-ST slots.
@@ -744,6 +848,163 @@ describe('BestElevenComponent', () => {
 
     const warning = element.querySelector('.restriction-warning');
     expect(warning).toBeTruthy();
+  });
+
+  // ── Task 4: Positions column ──────────────────────────────────────────────
+
+  it('displays player position in each roster row', () => {
+    const players = make11PlayersWithPositions();
+    playersSubject.next(players);
+    fixture.detectChanges();
+
+    const positionCells = element.querySelectorAll('.player-row-position');
+    expect(positionCells.length).toBe(11);
+    expect(positionCells[0].textContent?.trim()).toBe('GK');
+  });
+
+  it('shows empty position cell when player has no position data', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const positionCells = element.querySelectorAll('.player-row-position');
+    expect(positionCells.length).toBe(11);
+    positionCells.forEach(cell => expect(cell.textContent?.trim()).toBe(''));
+  });
+
+  // ── Task 5: Sortable columns ──────────────────────────────────────────────
+
+  it('clicking Name header sorts players by name ascending', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const nameHeader = element.querySelector('.sort-header-name') as HTMLElement;
+    nameHeader.click();
+    fixture.detectChanges();
+
+    expect(component.sortColumn()).toBe('name');
+    expect(component.sortDirection()).toBe('asc');
+
+    const rows = element.querySelectorAll('.player-row');
+    const names = Array.from(rows)
+      .filter(r => !r.classList.contains('unmarked'))
+      .map(r => r.querySelector('.player-row-name')!.textContent!.trim());
+    const sorted = [...names].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    expect(names).toEqual(sorted);
+  });
+
+  it('clicking Name header twice sorts players by name descending', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const nameHeader = element.querySelector('.sort-header-name') as HTMLElement;
+    nameHeader.click();
+    nameHeader.click();
+    fixture.detectChanges();
+
+    expect(component.sortColumn()).toBe('name');
+    expect(component.sortDirection()).toBe('desc');
+  });
+
+  it('clicking Position header sorts players by position in formation order', () => {
+    const players = make11PlayersWithPositions();
+    playersSubject.next(players);
+    fixture.detectChanges();
+
+    const posHeader = element.querySelector('.sort-header-position') as HTMLElement;
+    posHeader.click();
+    fixture.detectChanges();
+
+    expect(component.sortColumn()).toBe('position');
+    expect(component.sortDirection()).toBe('asc');
+
+    const rows = element.querySelectorAll('.player-row');
+    const positions = Array.from(rows).map(r =>
+      r.querySelector('.player-row-position')!.textContent!.trim()
+    );
+    // GK must come before D (L) which comes before M (C)
+    const gkIndex = positions.indexOf('GK');
+    const dlIndex = positions.indexOf('D (L)');
+    const mcIndex = positions.indexOf('M (C)');
+    expect(gkIndex).toBeLessThan(dlIndex);
+    expect(dlIndex).toBeLessThan(mcIndex);
+  });
+
+  it('unmarked players remain at the bottom when sorting by Name', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    component.toggleMark(7); // unmark Centre Mid 1
+    const nameHeader = element.querySelector('.sort-header-name') as HTMLElement;
+    nameHeader.click();
+    fixture.detectChanges();
+
+    const rows = Array.from(element.querySelectorAll('.player-row'));
+    const unmarkedRows = rows.filter(r => r.classList.contains('unmarked'));
+    const markedRows = rows.filter(r => !r.classList.contains('unmarked'));
+
+    const firstUnmarkedIndex = rows.indexOf(unmarkedRows[0]);
+    const lastMarkedIndex = rows.indexOf(markedRows[markedRows.length - 1]);
+    expect(firstUnmarkedIndex).toBeGreaterThan(lastMarkedIndex);
+  });
+
+  it('sort indicator shows ↑ when sort is ascending', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const nameHeader = element.querySelector('.sort-header-name') as HTMLElement;
+    nameHeader.click();
+    fixture.detectChanges();
+
+    expect(nameHeader.textContent).toContain('↑');
+  });
+
+  it('sort indicator shows ↓ when sort is descending', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const nameHeader = element.querySelector('.sort-header-name') as HTMLElement;
+    nameHeader.click();
+    nameHeader.click();
+    fixture.detectChanges();
+
+    expect(nameHeader.textContent).toContain('↓');
+  });
+
+  it('switching to a different sort column resets direction to ascending', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const nameHeader = element.querySelector('.sort-header-name') as HTMLElement;
+    const posHeader = element.querySelector('.sort-header-position') as HTMLElement;
+
+    nameHeader.click(); // name asc
+    nameHeader.click(); // name desc
+    expect(component.sortDirection()).toBe('desc');
+
+    posHeader.click(); // switch to position — should reset to asc
+    fixture.detectChanges();
+
+    expect(component.sortColumn()).toBe('position');
+    expect(component.sortDirection()).toBe('asc');
+  });
+
+  it('sorting applies within filtered search results', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    component.searchQuery.set('back'); // Left Back, Right Back, Centre Back 1, Centre Back 2
+    fixture.detectChanges();
+
+    const nameHeader = element.querySelector('.sort-header-name') as HTMLElement;
+    nameHeader.click();
+    fixture.detectChanges();
+
+    const rows = element.querySelectorAll('.player-row');
+    const names = Array.from(rows).map(r =>
+      r.querySelector('.player-row-name')!.textContent!.trim()
+    );
+    const sorted = [...names].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    expect(names).toEqual(sorted);
   });
 });
 
