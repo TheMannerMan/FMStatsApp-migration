@@ -1,4 +1,5 @@
 import { Player } from '../models/player.model';
+import { isPlayerEligibleForSlot } from './position-eligibility';
 
 /**
  * Returns the roleScore for a given shortRoleName on a player.
@@ -53,4 +54,24 @@ export function buildConstrainedScoreMatrix(
   );
 
   return { matrix, rowMap, colMap };
+}
+
+/**
+ * Zeroes out matrix cells where the player (via rowMap) is not eligible
+ * for the slot position (via colMap). Modifies the matrix in-place.
+ */
+export function applyPositionRestriction(
+  matrix: number[][],
+  players: Player[],
+  slotPositions: string[],
+  rowMap: number[],
+  colMap: number[]
+): void {
+  for (let i = 0; i < rowMap.length; i++) {
+    for (let j = 0; j < colMap.length; j++) {
+      if (!isPlayerEligibleForSlot(players[rowMap[i]], slotPositions[colMap[j]])) {
+        matrix[i][j] = 0;
+      }
+    }
+  }
 }

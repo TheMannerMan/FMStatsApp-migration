@@ -55,6 +55,21 @@
         }
       </div>
 
+      <div class="restriction-toggle">
+        <p-toggleswitch
+          [ngModel]="positionRestriction()"
+          (onChange)="onToggleRestriction()"
+          inputId="position-restriction"
+        />
+        <label for="position-restriction">Position Restriction</label>
+      </div>
+
+      @if (positionRestriction() && positionRestrictionErrors().length > 0) {
+        <p class="warning-message restriction-warning">
+          No eligible players for: {{ positionRestrictionErrors().join(', ') }}
+        </p>
+      }
+
       <div class="actions">
         @if (result()) {
           <button
