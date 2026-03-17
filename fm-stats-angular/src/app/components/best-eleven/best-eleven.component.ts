@@ -189,7 +189,9 @@ export class BestElevenComponent {
       return 0;
     };
 
-    return [...markedGroup.sort(sortFn), ...unmarkedGroup.sort(sortFn)];
+    const sortedMarked = [...markedGroup].sort(sortFn);
+    const sortedUnmarked = [...unmarkedGroup].sort(sortFn);
+    return [...sortedMarked, ...sortedUnmarked];
   });
 
   constructor() {
@@ -281,7 +283,7 @@ export class BestElevenComponent {
   }
 
   private readonly POSITION_GROUP_ORDER: Record<string, number> = {
-    GK: 0, WB: 1, D: 2, DM: 3, M: 4, AM: 5, ST: 6, F: 7,
+    GK: 0, D: 1, WB: 2, DM: 3, M: 4, AM: 5, ST: 6, F: 7,
   };
 
   private getPositionOrder(position: string): number {
