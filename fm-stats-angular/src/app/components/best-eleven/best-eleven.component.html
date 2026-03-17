@@ -113,6 +113,7 @@
           @for (player of rosterPlayers(); track player.uid) {
             <div class="player-row" [class.unmarked]="!markedPlayerUids().has(player.uid)">
               <span class="player-row-name">{{ player.name }}</span>
+              <span class="player-row-position">{{ player.position }}</span>
               <button
                 pButton
                 class="toggle-mark-btn"

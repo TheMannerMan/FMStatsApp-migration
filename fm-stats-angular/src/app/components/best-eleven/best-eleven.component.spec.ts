@@ -849,6 +849,27 @@ describe('BestElevenComponent', () => {
     const warning = element.querySelector('.restriction-warning');
     expect(warning).toBeTruthy();
   });
+
+  // ── Task 4: Positions column ──────────────────────────────────────────────
+
+  it('displays player position in each roster row', () => {
+    const players = make11PlayersWithPositions();
+    playersSubject.next(players);
+    fixture.detectChanges();
+
+    const positionCells = element.querySelectorAll('.player-row-position');
+    expect(positionCells.length).toBe(11);
+    expect(positionCells[0].textContent?.trim()).toBe('GK');
+  });
+
+  it('shows empty position cell when player has no position data', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const positionCells = element.querySelectorAll('.player-row-position');
+    expect(positionCells.length).toBe(11);
+    positionCells.forEach(cell => expect(cell.textContent?.trim()).toBe(''));
+  });
 });
 
 // ── Step 4: localStorage persistence ─────────────────────────────────────────
