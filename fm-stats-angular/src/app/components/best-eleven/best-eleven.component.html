@@ -141,10 +141,11 @@
                 pButton
                 class="toggle-mark-btn"
                 [class.unmark-mode]="markedPlayerUids().has(player.uid)"
-                [label]="markedPlayerUids().has(player.uid) ? 'Unmark' : 'Mark'"
-                severity="secondary"
-                [text]="markedPlayerUids().has(player.uid)"
+                [icon]="markedPlayerUids().has(player.uid) ? 'pi pi-times' : 'pi pi-plus'"
+                [severity]="markedPlayerUids().has(player.uid) ? 'danger' : 'secondary'"
+                text="true"
                 size="small"
+                [attr.aria-label]="markedPlayerUids().has(player.uid) ? 'Remove from squad' : 'Add to squad'"
                 (click)="toggleMark(player.uid)"
               ></button>
             </div>
