@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getPlayerRoleScore, buildScoreMatrix, buildConstrainedScoreMatrix } from './score-matrix';
+import { getPlayerRoleScore, buildScoreMatrix, buildConstrainedScoreMatrix, applyPositionRestriction } from './score-matrix';
 import { Player } from '../models/player.model';
 
 const makePlayer = (overrides: Partial<Player> = {}): Player => ({
@@ -183,5 +183,62 @@ describe('buildConstrainedScoreMatrix', () => {
     ]);
     expect(result.rowMap).toEqual([0, 1, 2]);
     expect(result.colMap).toEqual([0, 1]);
+  });
+});
+
+describe('applyPositionRestriction', () => {
+  const makePlayerWithPosition = (uid: number, position: string): Player =>
+    makePlayer({ uid, position });
+
+  it('zeroes out ineligible player/slot pairs', () => {
+    // Player 0: GK, Player 1: ST
+    // Slot 0: GK, Slot 1: ST
+    // rowMap=[0,1], colMap=[0,1]
+    const players = [
+      makePlayerWithPosition(0, 'GK'),
+      makePlayerWithPosition(1, 'ST (C)'),
+    ];
+    const slotPositions = ['GK', 'ST'];
+    const rowMap = [0, 1];
+    const colMap = [0, 1];
+    const matrix = [
+      [9, 5], // GK player: 9 for GK slot, 5 for ST slot
+      [3, 8], // ST player: 3 for GK slot, 8 for ST slot
+    ];
+
+    applyPositionRestriction(matrix, players, slotPositions, rowMap, colMap);
+
+    // GK player ineligible for ST slot → zeroed
+    expect(matrix[0][1]).toBe(0);
+    // ST player ineligible for GK slot → zeroed
+    expect(matrix[1][0]).toBe(0);
+    // Eligible pairs retain scores
+    expect(matrix[0][0]).toBe(9);
+    expect(matrix[1][1]).toBe(8);
+  });
+
+  it('retains scores for eligible pairs', () => {
+    const players = [makePlayerWithPosition(0, 'D (LC)')];
+    const slotPositions = ['DL'];
+    const rowMap = [0];
+    const colMap = [0];
+    const matrix = [[7]];
+
+    applyPositionRestriction(matrix, players, slotPositions, rowMap, colMap);
+
+    expect(matrix[0][0]).toBe(7);
+  });
+
+  it('zeroes all slots for a player with no matching positions', () => {
+    const players = [makePlayerWithPosition(0, 'GK')];
+    const slotPositions = ['ST', 'DC'];
+    const rowMap = [0];
+    const colMap = [0, 1];
+    const matrix = [[6, 4]];
+
+    applyPositionRestriction(matrix, players, slotPositions, rowMap, colMap);
+
+    expect(matrix[0][0]).toBe(0);
+    expect(matrix[0][1]).toBe(0);
   });
 });

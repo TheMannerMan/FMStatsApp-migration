@@ -1,12 +1,15 @@
 import { Component, inject, computed, signal, effect } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { PlayerService } from '../../services/player.service';
 import { Player } from '../../models/player.model';
 import { RoleInfo } from '../../models/role-group.model';
 import { FORMATION_442, FormationSlot } from '../../models/formation.model';
-import { getPlayerRoleScore, buildConstrainedScoreMatrix } from '../../utils/score-matrix';
+import { getPlayerRoleScore, buildConstrainedScoreMatrix, applyPositionRestriction } from '../../utils/score-matrix';
+import { isPlayerEligibleForSlot } from '../../utils/position-eligibility';
 import { hungarian } from '../../utils/hungarian';
 import { RolePickerModalComponent } from '../role-picker-modal/role-picker-modal.component';
 import { PlayerPickerModalComponent } from '../player-picker-modal/player-picker-modal.component';
@@ -21,7 +24,7 @@ export interface ResultEntry {
 @Component({
   selector: 'app-best-eleven',
   standalone: true,
-  imports: [CommonModule, ButtonModule, RolePickerModalComponent, PlayerPickerModalComponent],
+  imports: [CommonModule, FormsModule, ButtonModule, ToggleSwitchModule, RolePickerModalComponent, PlayerPickerModalComponent],
   templateUrl: './best-eleven.component.html',
   styleUrl: './best-eleven.component.scss',
 })
@@ -38,6 +41,7 @@ export class BestElevenComponent {
   lockedPlayers = signal<(number | null)[]>(new Array(11).fill(null));
   result = signal<ResultEntry[] | null>(null);
   markedPlayerUids = signal<Set<number>>(new Set());
+  positionRestriction = signal(false);
 
   // ── Modal state ──────────────────────────────────────────────────────────
 
@@ -103,9 +107,31 @@ export class BestElevenComponent {
 
   protected hasEnoughPlayers = computed(() => this.eligiblePlayers().length >= 11);
 
+  protected positionRestrictionErrors = computed((): string[] => {
+    if (!this.positionRestriction()) return [];
+    const players = this.eligiblePlayers();
+    const locks = this.lockedPlayers();
+    const lockedUids = new Set(locks.filter((uid): uid is number => uid !== null));
+
+    return this.formation
+      .map((slot, slotIndex) => {
+        const lockedUid = locks[slotIndex];
+        // Locked player bypasses restriction check for this slot
+        if (lockedUid !== null) return null;
+        // Check if any non-locked eligible player can play this position
+        const hasEligible = players
+          .filter(p => !lockedUids.has(p.uid))
+          .some(p => isPlayerEligibleForSlot(p, slot.position));
+        return hasEligible ? null : slot.position;
+      })
+      .filter((pos): pos is string => pos !== null);
+  });
+
   protected canCalculate = computed(() => {
     if (!this.hasEnoughPlayers()) return false;
-    return this.selectedRoles().every(r => r !== null);
+    if (!this.selectedRoles().every(r => r !== null)) return false;
+    if (this.positionRestriction() && this.positionRestrictionErrors().length > 0) return false;
+    return true;
   });
 
   protected availablePlayersForSlot = computed(() => {
@@ -195,6 +221,11 @@ export class BestElevenComponent {
     return this.formation
       .map((slot, index) => ({ slot, index }))
       .filter(s => s.slot.row === row);
+  }
+
+  onToggleRestriction(): void {
+    this.positionRestriction.update(v => !v);
+    this.result.set(null);
   }
 
   protected onRoleChange(slotIndex: number, roleName: string | null): void {
@@ -291,6 +322,10 @@ export class BestElevenComponent {
     const { matrix, rowMap, colMap } = buildConstrainedScoreMatrix(
       players, slotRoles, lockedPairs
     );
+
+    if (this.positionRestriction() && matrix.length > 0) {
+      applyPositionRestriction(matrix, players, this.formation.map(s => s.position), rowMap, colMap);
+    }
 
     let freeEntries: ResultEntry[] = [];
     if (matrix.length > 0 && matrix[0]?.length > 0) {

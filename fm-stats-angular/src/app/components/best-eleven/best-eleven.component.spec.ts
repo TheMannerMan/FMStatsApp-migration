@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { BehaviorSubject } from 'rxjs';
 import { provideRouter } from '@angular/router';
 import { BestElevenComponent } from './best-eleven.component';
@@ -8,12 +8,12 @@ import { Player } from '../../models/player.model';
 import { RoleGroup } from '../../models/role-group.model';
 import { signal } from '@angular/core';
 
-const makePlayer = (uid: number, name: string, roles: { shortRoleName: string; position: string; roleScore: number }[]): Player => ({
+const makePlayer = (uid: number, name: string, roles: { shortRoleName: string; position: string; roleScore: number }[], position = ''): Player => ({
   uid,
   name,
   roles: roles.map(r => ({ roleName: r.shortRoleName, ...r })),
   reg: '', inf: '', age: 25, wage: 1000, transferValue: 0,
-  nationality: '', secondNationality: '', position: '',
+  nationality: '', secondNationality: '', position,
   personality: '', mediaHandling: '', averageRating: 0,
   leftFoot: '', rightFoot: '', height: 180,
   oneVsOne: 0, acceleration: 0, aerialAbility: 0, aggression: 0,
@@ -603,6 +603,147 @@ describe('BestElevenComponent', () => {
     const playerBtn = element.querySelector('.slot-player-btn') as HTMLButtonElement;
     expect(playerBtn).toBeTruthy();
     expect(playerBtn.disabled).toBe(false);
+  });
+
+  // ── Position restriction ──────────────────────────────────────────────────
+
+  function make11PlayersWithPositions(): Player[] {
+    return [
+      makePlayer(1,  'Keeper',        [{ shortRoleName: 'SK',  position: 'GK', roleScore: 9 }], 'GK'),
+      makePlayer(2,  'Left Back',     [{ shortRoleName: 'WB',  position: 'DL', roleScore: 8 }], 'D (L)'),
+      makePlayer(3,  'Centre Back 1', [{ shortRoleName: 'BPD', position: 'DC', roleScore: 8 }], 'D (C)'),
+      makePlayer(4,  'Centre Back 2', [{ shortRoleName: 'BPD', position: 'DC', roleScore: 7 }], 'D (C)'),
+      makePlayer(5,  'Right Back',    [{ shortRoleName: 'WB',  position: 'DR', roleScore: 7 }], 'D (R)'),
+      makePlayer(6,  'Left Mid',      [{ shortRoleName: 'W',   position: 'ML', roleScore: 8 }], 'M (L)'),
+      makePlayer(7,  'Centre Mid 1',  [{ shortRoleName: 'BBM', position: 'MC', roleScore: 9 }], 'M (C)'),
+      makePlayer(8,  'Centre Mid 2',  [{ shortRoleName: 'BBM', position: 'MC', roleScore: 7 }], 'M (C)'),
+      makePlayer(9,  'Right Mid',     [{ shortRoleName: 'W',   position: 'MR', roleScore: 8 }], 'M (R)'),
+      makePlayer(10, 'Striker 1',     [{ shortRoleName: 'AF',  position: 'ST', roleScore: 9 }], 'ST (C)'),
+      makePlayer(11, 'Striker 2',     [{ shortRoleName: 'AF',  position: 'ST', roleScore: 8 }], 'ST (C)'),
+    ];
+  }
+
+  it('toggle is OFF by default', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    expect(component.positionRestriction()).toBe(false);
+  });
+
+  it('canCalculate with restriction OFF ignores player position field', () => {
+    // make11Players() all have position:'' — restriction OFF should not care
+    playersSubject.next(make11Players());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    component.selectedRoles.set(['SK', 'WB', 'BPD', 'BPD', 'WB', 'W', 'BBM', 'BBM', 'W', 'AF', 'AF']);
+    fixture.detectChanges();
+
+    expect(component['canCalculate']()).toBe(true);
+  });
+
+  it('canCalculate false when restriction ON and a slot has no eligible player', () => {
+    // make11Players() have position:'' → no player eligible for any slot
+    playersSubject.next(make11Players());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    component.selectedRoles.set(['SK', 'WB', 'BPD', 'BPD', 'WB', 'W', 'BBM', 'BBM', 'W', 'AF', 'AF']);
+    component.onToggleRestriction();
+    fixture.detectChanges();
+
+    expect(component['canCalculate']()).toBe(false);
+  });
+
+  it('shows error message listing ineligible slot positions when restriction ON', () => {
+    playersSubject.next(make11Players());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    component.selectedRoles.set(['SK', 'WB', 'BPD', 'BPD', 'WB', 'W', 'BBM', 'BBM', 'W', 'AF', 'AF']);
+    component.onToggleRestriction();
+    fixture.detectChanges();
+
+    const warning = element.querySelector('.restriction-warning');
+    expect(warning).toBeTruthy();
+    expect(warning!.textContent).toContain('No eligible players for:');
+  });
+
+  it('canCalculate true when restriction ON and all slots have eligible players', () => {
+    playersSubject.next(make11PlayersWithPositions());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    component.selectedRoles.set(['SK', 'WB', 'BPD', 'BPD', 'WB', 'W', 'BBM', 'BBM', 'W', 'AF', 'AF']);
+    component.onToggleRestriction();
+    fixture.detectChanges();
+
+    expect(component['canCalculate']()).toBe(true);
+  });
+
+  it('toggling restriction while result exists clears the result', () => {
+    playersSubject.next(make11Players());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    component.selectedRoles.set(['SK', 'WB', 'BPD', 'BPD', 'WB', 'W', 'BBM', 'BBM', 'W', 'AF', 'AF']);
+    fixture.detectChanges();
+    component.calculate();
+    fixture.detectChanges();
+
+    expect(component.result()).not.toBeNull();
+
+    component.onToggleRestriction();
+    fixture.detectChanges();
+
+    expect(component.result()).toBeNull();
+  });
+
+  it('locked player bypasses position restriction (locked slot not checked for position)', () => {
+    // Lock player 10 (Striker, position='ST (C)') into slot 1 (DL) — ineligible for DL.
+    // The locked slot itself is not checked (bypass), and all other free slots still have
+    // eligible players, so canCalculate should remain true.
+    const players = make11PlayersWithPositions();
+    playersSubject.next(players);
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    const locks = new Array(11).fill(null) as (number | null)[];
+    locks[1] = 10; // lock Striker 1 (ST) into DL slot
+    component.lockedPlayers.set(locks);
+
+    component.selectedRoles.set(['SK', 'WB', 'BPD', 'BPD', 'WB', 'W', 'BBM', 'BBM', 'W', 'AF', 'AF']);
+    component.onToggleRestriction();
+    fixture.detectChanges();
+
+    // DL slot is locked (bypasses restriction for that slot).
+    // All other free slots still have eligible players (including ST covered by player 11).
+    expect(component['canCalculate']()).toBe(true);
+  });
+
+  it('canCalculate false when locked player in ineligible slot and no eligible players remain for that slot', () => {
+    // Use players with positions but assign the ONE ST-eligible player to a non-ST slot
+    // Only 2 ST-eligible players (uids 10, 11). Lock both into non-ST slots.
+    // Then with restriction ON, the 2 ST slots have no eligible unlocked players.
+    const players = make11PlayersWithPositions();
+    playersSubject.next(players);
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    // Lock both strikers (uids 10,11) in non-ST slots (ML=index5, MR=index8)
+    const locks = new Array(11).fill(null) as (number | null)[];
+    locks[5] = 10;
+    locks[8] = 11;
+    component.lockedPlayers.set(locks);
+
+    component.selectedRoles.set(['SK', 'WB', 'BPD', 'BPD', 'WB', 'W', 'BBM', 'BBM', 'W', 'AF', 'AF']);
+    component.onToggleRestriction();
+    fixture.detectChanges();
+
+    expect(component['canCalculate']()).toBe(false);
+
+    const warning = element.querySelector('.restriction-warning');
+    expect(warning).toBeTruthy();
   });
 });
 
