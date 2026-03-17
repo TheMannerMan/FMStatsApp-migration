@@ -197,6 +197,11 @@
   }
 }
 
+.sort-header-spacer {
+  flex-shrink: 0;
+  width: 3rem; // approximate width of the small toggle button
+}
+
 .roster-empty-message {
   font-size: 0.875rem;
   color: var(--color-text-secondary);

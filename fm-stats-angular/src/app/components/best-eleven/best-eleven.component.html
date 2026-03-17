@@ -130,6 +130,7 @@
               {{ sortDirection() === 'asc' ? '↑' : '↓' }}
             }
           </span>
+          <span class="sort-header-spacer" aria-hidden="true"></span>
         </div>
         <div class="roster-list">
           @for (player of rosterPlayers(); track player.uid) {
