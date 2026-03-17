@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { InputTextModule } from 'primeng/inputtext';
 import { PlayerService } from '../../services/player.service';
 import { Player } from '../../models/player.model';
 import { RoleInfo } from '../../models/role-group.model';
@@ -24,7 +25,7 @@ export interface ResultEntry {
 @Component({
   selector: 'app-best-eleven',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, ToggleSwitchModule, RolePickerModalComponent, PlayerPickerModalComponent],
+  imports: [CommonModule, FormsModule, ButtonModule, ToggleSwitchModule, InputTextModule, RolePickerModalComponent, PlayerPickerModalComponent],
   templateUrl: './best-eleven.component.html',
   styleUrl: './best-eleven.component.scss',
 })
@@ -42,6 +43,9 @@ export class BestElevenComponent {
   result = signal<ResultEntry[] | null>(null);
   markedPlayerUids = signal<Set<number>>(new Set());
   positionRestriction = signal(false);
+  searchQuery = signal('');
+  sortColumn = signal<'name' | 'position' | null>(null);
+  sortDirection = signal<'asc' | 'desc'>('asc');
 
   // ── Modal state ──────────────────────────────────────────────────────────
 
@@ -159,6 +163,35 @@ export class BestElevenComponent {
     );
   });
 
+  protected rosterPlayers = computed(() => {
+    const allPlayers = this.players();
+    const marked = this.markedPlayerUids();
+    const query = this.searchQuery().toLowerCase().trim();
+    const col = this.sortColumn();
+    const dir = this.sortDirection();
+
+    const filtered = query
+      ? allPlayers.filter(p => p.name.toLowerCase().includes(query))
+      : allPlayers;
+
+    const markedGroup = filtered.filter(p => marked.has(p.uid));
+    const unmarkedGroup = filtered.filter(p => !marked.has(p.uid));
+
+    const sortFn = (a: Player, b: Player): number => {
+      if (col === 'name') {
+        const cmp = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+        return dir === 'asc' ? cmp : -cmp;
+      }
+      if (col === 'position') {
+        const cmp = this.comparePositions(a.position, b.position);
+        return dir === 'asc' ? cmp : -cmp;
+      }
+      return 0;
+    };
+
+    return [...markedGroup.sort(sortFn), ...unmarkedGroup.sort(sortFn)];
+  });
+
   constructor() {
     const stored = localStorage.getItem(this.STORAGE_KEY);
     let storedMarked: Set<number> | null = null;
@@ -245,6 +278,36 @@ export class BestElevenComponent {
   protected reset(): void {
     this.result.set(null);
     this.lockedPlayers.set(new Array(11).fill(null));
+  }
+
+  private readonly POSITION_GROUP_ORDER: Record<string, number> = {
+    GK: 0, WB: 1, D: 2, DM: 3, M: 4, AM: 5, ST: 6, F: 7,
+  };
+
+  private getPositionOrder(position: string): number {
+    const firstPos = position.split(',')[0].trim();
+    const prefix = firstPos.split(' ')[0];
+    return this.POSITION_GROUP_ORDER[prefix] ?? 99;
+  }
+
+  private comparePositions(a: string, b: string): number {
+    const orderA = this.getPositionOrder(a);
+    const orderB = this.getPositionOrder(b);
+    if (orderA !== orderB) return orderA - orderB;
+    return a.localeCompare(b, undefined, { sensitivity: 'base' });
+  }
+
+  onSearchInput(event: Event): void {
+    this.searchQuery.set((event.target as HTMLInputElement).value);
+  }
+
+  toggleSort(col: 'name' | 'position'): void {
+    if (this.sortColumn() === col) {
+      this.sortDirection.update(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.sortColumn.set(col);
+      this.sortDirection.set('asc');
+    }
   }
 
   protected getScoreClass(score: number): string {

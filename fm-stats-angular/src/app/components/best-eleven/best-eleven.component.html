@@ -102,8 +102,15 @@
           [disabled]="allMarked()"
           (click)="markAll()"
         ></button>
+        <input
+          pInputText
+          type="text"
+          class="roster-search"
+          placeholder="Search players..."
+          (input)="onSearchInput($event)"
+        />
         <div class="roster-list">
-          @for (player of players(); track player.uid) {
+          @for (player of rosterPlayers(); track player.uid) {
             <div class="player-row" [class.unmarked]="!markedPlayerUids().has(player.uid)">
               <span class="player-row-name">{{ player.name }}</span>
               <button
@@ -117,6 +124,9 @@
                 (click)="toggleMark(player.uid)"
               ></button>
             </div>
+          }
+          @if (rosterPlayers().length === 0) {
+            <p class="roster-empty-message">No players found</p>
           }
         </div>
       </div>

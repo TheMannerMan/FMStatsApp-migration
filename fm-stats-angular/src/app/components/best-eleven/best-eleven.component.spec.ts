@@ -550,11 +550,13 @@ describe('BestElevenComponent', () => {
     playersSubject.next(make11Players());
     fixture.detectChanges();
 
-    component.toggleMark(1); // unmark player 1
+    component.toggleMark(1); // unmark player 1 (Keeper — moves to bottom due to grouping)
     fixture.detectChanges();
 
-    const firstRow = element.querySelector('.player-row') as HTMLElement;
-    const btn = firstRow.querySelector('.toggle-mark-btn') as HTMLElement;
+    // Unmarked players are grouped at the bottom; find the unmarked row directly
+    const unmarkedRow = element.querySelector('.player-row.unmarked') as HTMLElement;
+    expect(unmarkedRow).toBeTruthy();
+    const btn = unmarkedRow.querySelector('.toggle-mark-btn') as HTMLElement;
     expect(btn.classList.contains('unmark-mode')).toBe(false);
   });
 
@@ -741,6 +743,86 @@ describe('BestElevenComponent', () => {
     // DL slot is locked (bypasses restriction for that slot).
     // All other free slots still have eligible players (including ST covered by player 11).
     expect(component['canCalculate']()).toBe(true);
+  });
+
+  // ── Task 3: Grouping + Search ─────────────────────────────────────────────
+
+  it('marked players appear before unmarked players in the roster list', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    // Unmark players 1 and 2 (first two)
+    component.toggleMark(1);
+    component.toggleMark(2);
+    fixture.detectChanges();
+
+    const rows = Array.from(element.querySelectorAll('.player-row'));
+    const unmarkedRows = rows.filter(r => r.classList.contains('unmarked'));
+    const markedRows = rows.filter(r => !r.classList.contains('unmarked'));
+
+    expect(markedRows.length).toBe(9);
+    expect(unmarkedRows.length).toBe(2);
+
+    // All unmarked rows must appear after all marked rows in DOM order
+    const firstUnmarkedIndex = rows.indexOf(unmarkedRows[0]);
+    const lastMarkedIndex = rows.indexOf(markedRows[markedRows.length - 1]);
+    expect(firstUnmarkedIndex).toBeGreaterThan(lastMarkedIndex);
+  });
+
+  it('search filters players by partial name match (case-insensitive)', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    component.searchQuery.set('keeper');
+    fixture.detectChanges();
+
+    const rows = element.querySelectorAll('.player-row');
+    expect(rows.length).toBe(1);
+    expect(rows[0].textContent).toContain('Keeper');
+  });
+
+  it('search shows no results message when query matches nothing', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    component.searchQuery.set('zzznomatch');
+    fixture.detectChanges();
+
+    const rows = element.querySelectorAll('.player-row');
+    expect(rows.length).toBe(0);
+
+    const msg = element.querySelector('.roster-empty-message');
+    expect(msg).toBeTruthy();
+    expect(msg!.textContent).toContain('No players found');
+  });
+
+  it('search results with unmarked player remain grouped at the bottom', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    // Unmark Keeper (uid=1)
+    component.toggleMark(1);
+    // 'striker' matches Striker 1 (uid=10) and Striker 2 (uid=11) — both marked
+    component.searchQuery.set('striker');
+    fixture.detectChanges();
+
+    // 'striker' does not match Keeper — only the 2 marked Strikers are visible
+    const rows = Array.from(element.querySelectorAll('.player-row'));
+    expect(rows.length).toBe(2);
+    expect(rows.every(r => !r.classList.contains('unmarked'))).toBe(true);
+  });
+
+  it('search with unmarked match keeps it at the bottom', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    component.toggleMark(1); // unmark Keeper
+    component.searchQuery.set('keeper');
+    fixture.detectChanges();
+
+    const rows = Array.from(element.querySelectorAll('.player-row'));
+    expect(rows.length).toBe(1);
+    expect(rows[0].classList.contains('unmarked')).toBe(true);
   });
 
   it('canCalculate false when locked player in ineligible slot and no eligible players remain for that slot', () => {

@@ -155,6 +155,19 @@
   margin-bottom: 0.75rem;
 }
 
+.roster-search {
+  width: 100%;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.roster-empty-message {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: 0.75rem 0;
+}
+
 .roster-list {
   display: flex;
   flex-direction: column;
@@ -198,6 +211,10 @@
 
   .roster-panel {
     width: 100%;
+  }
+
+  .roster-search {
+    font-size: 0.8125rem;
   }
 }
 
