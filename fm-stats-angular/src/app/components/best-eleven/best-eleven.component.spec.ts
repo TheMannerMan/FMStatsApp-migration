@@ -537,6 +537,27 @@ describe('BestElevenComponent', () => {
     expect(unmarkedRows.length).toBe(1);
   });
 
+  it('Unmark button has unmark-mode class when player is marked', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const firstRow = element.querySelector('.player-row') as HTMLElement;
+    const btn = firstRow.querySelector('.toggle-mark-btn') as HTMLElement;
+    expect(btn.classList.contains('unmark-mode')).toBe(true);
+  });
+
+  it('Mark button does not have unmark-mode class when player is unmarked', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    component.toggleMark(1); // unmark player 1
+    fixture.detectChanges();
+
+    const firstRow = element.querySelector('.player-row') as HTMLElement;
+    const btn = firstRow.querySelector('.toggle-mark-btn') as HTMLElement;
+    expect(btn.classList.contains('unmark-mode')).toBe(false);
+  });
+
   it('does not render roster panel when no players are uploaded', () => {
     playersSubject.next([]);
     fixture.detectChanges();

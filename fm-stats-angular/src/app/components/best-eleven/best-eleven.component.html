@@ -109,8 +109,10 @@
               <button
                 pButton
                 class="toggle-mark-btn"
+                [class.unmark-mode]="markedPlayerUids().has(player.uid)"
                 [label]="markedPlayerUids().has(player.uid) ? 'Unmark' : 'Mark'"
                 severity="secondary"
+                [text]="markedPlayerUids().has(player.uid)"
                 size="small"
                 (click)="toggleMark(player.uid)"
               ></button>
