@@ -1006,6 +1006,72 @@ describe('BestElevenComponent', () => {
     const sorted = [...names].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
     expect(names).toEqual(sorted);
   });
+
+  // ── Layout redesign: icon-only buttons ───────────────────────────────────
+
+  it('player row buttons contain no visible label text "Unmark" or "Mark"', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const rows = element.querySelectorAll('.player-row');
+    rows.forEach(row => {
+      const btn = row.querySelector('.toggle-mark-btn') as HTMLElement;
+      expect(btn).toBeTruthy();
+      // PrimeNG may inject a p-button-label span; it must be empty (icon-only)
+      const labelSpan = btn.querySelector('.p-button-label');
+      if (labelSpan) {
+        expect(labelSpan.textContent?.trim() ?? '').toBe('');
+      }
+      // No bare text nodes with "Unmark" or "Mark"
+      expect(btn.textContent).not.toContain('Unmark');
+      expect(btn.textContent).not.toContain('Mark');
+    });
+  });
+
+  it('marked player row toggle button uses pi-times icon', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    // All players start marked; first row should show the unmark (times) button
+    const firstRow = element.querySelector('.player-row:not(.unmarked)') as HTMLElement;
+    const btn = firstRow.querySelector('.toggle-mark-btn') as HTMLElement;
+    const icon = btn.querySelector('.pi-times');
+    expect(icon).toBeTruthy();
+  });
+
+  it('unmarked player row toggle button uses pi-plus icon', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    component.toggleMark(1); // unmark player 1
+    fixture.detectChanges();
+
+    const unmarkedRow = element.querySelector('.player-row.unmarked') as HTMLElement;
+    const btn = unmarkedRow.querySelector('.toggle-mark-btn') as HTMLElement;
+    const icon = btn.querySelector('.pi-plus');
+    expect(icon).toBeTruthy();
+  });
+
+  it('toggle mark button has an aria-label describing its action', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const rows = element.querySelectorAll('.player-row');
+    rows.forEach(row => {
+      const btn = row.querySelector('.toggle-mark-btn') as HTMLElement;
+      expect(btn.getAttribute('aria-label')).toBeTruthy();
+    });
+  });
+
+  it('best-eleven-page element has no inline max-width style', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const page = element.querySelector('.best-eleven-page') as HTMLElement;
+    expect(page).toBeTruthy();
+    // No inline max-width should be applied by Angular (the constraint was in the stylesheet)
+    expect(page.style.maxWidth).toBe('');
+  });
 });
 
 // ── Step 4: localStorage persistence ─────────────────────────────────────────
