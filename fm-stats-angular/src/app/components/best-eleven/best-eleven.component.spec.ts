@@ -381,7 +381,7 @@ describe('BestElevenComponent', () => {
     make11Players().forEach(p => expect(marked.has(p.uid)).toBe(true));
   });
 
-  it('Mark All button is disabled when all players are already marked', () => {
+  it('Reset button is disabled when all players are already marked', () => {
     playersSubject.next(make11Players());
     rolesSignal.set(makeRoles());
     fixture.detectChanges();
@@ -389,6 +389,7 @@ describe('BestElevenComponent', () => {
     const btn = element.querySelector('.mark-all-btn') as HTMLButtonElement;
     expect(btn).toBeTruthy();
     expect(btn.disabled).toBe(true);
+    expect(btn.textContent?.trim()).toContain('Reset');
   });
 
   // ── Step 2: eligiblePlayers + hasEnoughPlayers ────────────────────────────
