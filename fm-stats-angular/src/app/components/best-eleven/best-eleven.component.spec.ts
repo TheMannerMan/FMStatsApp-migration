@@ -870,6 +870,142 @@ describe('BestElevenComponent', () => {
     expect(positionCells.length).toBe(11);
     positionCells.forEach(cell => expect(cell.textContent?.trim()).toBe(''));
   });
+
+  // ── Task 5: Sortable columns ──────────────────────────────────────────────
+
+  it('clicking Name header sorts players by name ascending', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const nameHeader = element.querySelector('.sort-header-name') as HTMLElement;
+    nameHeader.click();
+    fixture.detectChanges();
+
+    expect(component.sortColumn()).toBe('name');
+    expect(component.sortDirection()).toBe('asc');
+
+    const rows = element.querySelectorAll('.player-row');
+    const names = Array.from(rows)
+      .filter(r => !r.classList.contains('unmarked'))
+      .map(r => r.querySelector('.player-row-name')!.textContent!.trim());
+    const sorted = [...names].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    expect(names).toEqual(sorted);
+  });
+
+  it('clicking Name header twice sorts players by name descending', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const nameHeader = element.querySelector('.sort-header-name') as HTMLElement;
+    nameHeader.click();
+    nameHeader.click();
+    fixture.detectChanges();
+
+    expect(component.sortColumn()).toBe('name');
+    expect(component.sortDirection()).toBe('desc');
+  });
+
+  it('clicking Position header sorts players by position in formation order', () => {
+    const players = make11PlayersWithPositions();
+    playersSubject.next(players);
+    fixture.detectChanges();
+
+    const posHeader = element.querySelector('.sort-header-position') as HTMLElement;
+    posHeader.click();
+    fixture.detectChanges();
+
+    expect(component.sortColumn()).toBe('position');
+    expect(component.sortDirection()).toBe('asc');
+
+    const rows = element.querySelectorAll('.player-row');
+    const positions = Array.from(rows).map(r =>
+      r.querySelector('.player-row-position')!.textContent!.trim()
+    );
+    // GK must come before D (L) which comes before M (C)
+    const gkIndex = positions.indexOf('GK');
+    const dlIndex = positions.indexOf('D (L)');
+    const mcIndex = positions.indexOf('M (C)');
+    expect(gkIndex).toBeLessThan(dlIndex);
+    expect(dlIndex).toBeLessThan(mcIndex);
+  });
+
+  it('unmarked players remain at the bottom when sorting by Name', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    component.toggleMark(7); // unmark Centre Mid 1
+    const nameHeader = element.querySelector('.sort-header-name') as HTMLElement;
+    nameHeader.click();
+    fixture.detectChanges();
+
+    const rows = Array.from(element.querySelectorAll('.player-row'));
+    const unmarkedRows = rows.filter(r => r.classList.contains('unmarked'));
+    const markedRows = rows.filter(r => !r.classList.contains('unmarked'));
+
+    const firstUnmarkedIndex = rows.indexOf(unmarkedRows[0]);
+    const lastMarkedIndex = rows.indexOf(markedRows[markedRows.length - 1]);
+    expect(firstUnmarkedIndex).toBeGreaterThan(lastMarkedIndex);
+  });
+
+  it('sort indicator shows ↑ when sort is ascending', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const nameHeader = element.querySelector('.sort-header-name') as HTMLElement;
+    nameHeader.click();
+    fixture.detectChanges();
+
+    expect(nameHeader.textContent).toContain('↑');
+  });
+
+  it('sort indicator shows ↓ when sort is descending', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const nameHeader = element.querySelector('.sort-header-name') as HTMLElement;
+    nameHeader.click();
+    nameHeader.click();
+    fixture.detectChanges();
+
+    expect(nameHeader.textContent).toContain('↓');
+  });
+
+  it('switching to a different sort column resets direction to ascending', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    const nameHeader = element.querySelector('.sort-header-name') as HTMLElement;
+    const posHeader = element.querySelector('.sort-header-position') as HTMLElement;
+
+    nameHeader.click(); // name asc
+    nameHeader.click(); // name desc
+    expect(component.sortDirection()).toBe('desc');
+
+    posHeader.click(); // switch to position — should reset to asc
+    fixture.detectChanges();
+
+    expect(component.sortColumn()).toBe('position');
+    expect(component.sortDirection()).toBe('asc');
+  });
+
+  it('sorting applies within filtered search results', () => {
+    playersSubject.next(make11Players());
+    fixture.detectChanges();
+
+    component.searchQuery.set('back'); // Left Back, Right Back, Centre Back 1, Centre Back 2
+    fixture.detectChanges();
+
+    const nameHeader = element.querySelector('.sort-header-name') as HTMLElement;
+    nameHeader.click();
+    fixture.detectChanges();
+
+    const rows = element.querySelectorAll('.player-row');
+    const names = Array.from(rows).map(r =>
+      r.querySelector('.player-row-name')!.textContent!.trim()
+    );
+    const sorted = [...names].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    expect(names).toEqual(sorted);
+  });
 });
 
 // ── Step 4: localStorage persistence ─────────────────────────────────────────

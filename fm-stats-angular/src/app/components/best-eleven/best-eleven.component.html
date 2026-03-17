@@ -109,6 +109,28 @@
           placeholder="Search players..."
           (input)="onSearchInput($event)"
         />
+        <div class="roster-column-headers">
+          <span
+            class="sort-header sort-header-name"
+            [class.active]="sortColumn() === 'name'"
+            (click)="toggleSort('name')"
+          >
+            Name
+            @if (sortColumn() === 'name') {
+              {{ sortDirection() === 'asc' ? '↑' : '↓' }}
+            }
+          </span>
+          <span
+            class="sort-header sort-header-position"
+            [class.active]="sortColumn() === 'position'"
+            (click)="toggleSort('position')"
+          >
+            Position
+            @if (sortColumn() === 'position') {
+              {{ sortDirection() === 'asc' ? '↑' : '↓' }}
+            }
+          </span>
+        </div>
         <div class="roster-list">
           @for (player of rosterPlayers(); track player.uid) {
             <div class="player-row" [class.unmarked]="!markedPlayerUids().has(player.uid)">
