@@ -138,16 +138,13 @@
               <span class="player-row-name">{{ player.name }}</span>
               <span class="player-row-position">{{ player.position }}</span>
               <button
-                pButton
                 class="toggle-mark-btn"
                 [class.unmark-mode]="markedPlayerUids().has(player.uid)"
-                [icon]="markedPlayerUids().has(player.uid) ? 'pi pi-times' : 'pi pi-plus'"
-                [severity]="markedPlayerUids().has(player.uid) ? 'danger' : 'secondary'"
-                text="true"
-                size="small"
                 [attr.aria-label]="markedPlayerUids().has(player.uid) ? 'Remove from squad' : 'Add to squad'"
                 (click)="toggleMark(player.uid)"
-              ></button>
+              >
+                <i [class]="markedPlayerUids().has(player.uid) ? 'pi pi-times' : 'pi pi-plus'"></i>
+              </button>
             </div>
           }
           @if (rosterPlayers().length === 0) {

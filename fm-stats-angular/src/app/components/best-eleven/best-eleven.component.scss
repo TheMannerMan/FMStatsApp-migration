@@ -19,12 +19,13 @@
 
 .page-layout {
   display: flex;
-  gap: 2rem;
+  gap: calc(2rem + 96px);
   align-items: flex-start;
+  justify-content: center;
 }
 
 .formation-column {
-  flex: 1;
+  flex: 0 0 auto;
   min-width: 0;
 }
 
@@ -251,6 +252,35 @@
   text-align: center;
   margin-right: 0.5rem;
   flex-shrink: 0;
+}
+
+.toggle-mark-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border-radius: 4px;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: var(--color-border);
+  }
+
+  &.unmark-mode {
+    color: #ef4444;
+
+    &:hover {
+      background: rgba(239, 68, 68, 0.1);
+    }
+  }
 }
 
 @media (max-width: 900px) {
