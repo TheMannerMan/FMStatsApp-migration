@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { BehaviorSubject } from 'rxjs';
-import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
+import { provideRouter, ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { BestElevenComponent } from './best-eleven.component';
 import { PlayerService } from '../../services/player.service';
 import { Player } from '../../models/player.model';
@@ -85,6 +86,7 @@ describe('BestElevenComponent', () => {
       providers: [
         provideRouter([]),
         { provide: PlayerService, useValue: mockPlayerService },
+        { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ formation: '4-4-2' })) } },
       ],
     }).compileComponents();
 
@@ -207,7 +209,7 @@ describe('BestElevenComponent', () => {
 
     const result = component.result()!;
     expect(result).not.toBeNull();
-    const gkEntry = result.find(e => e.slot === component['formation'][0]);
+    const gkEntry = result.find(e => e.slot === component['formation']()[0]);
     expect(gkEntry!.player.uid).toBe(11);
   });
 
@@ -334,7 +336,7 @@ describe('BestElevenComponent', () => {
     expect(result).not.toBeNull();
     expect(result.length).toBe(11);
     result.forEach((entry, i) => {
-      const expectedSlot = component['formation'][i];
+      const expectedSlot = component['formation']()[i];
       const matchingEntry = result.find(e => e.slot === expectedSlot);
       expect(matchingEntry!.player.uid).toBe(players[i].uid);
     });
@@ -488,7 +490,7 @@ describe('BestElevenComponent', () => {
     fixture.detectChanges();
 
     const result = component.result()!;
-    const gkEntry = result.find(e => e.slot === component['formation'][0]);
+    const gkEntry = result.find(e => e.slot === component['formation']()[0]);
     expect(gkEntry!.player.uid).toBe(12);
   });
 
@@ -1098,6 +1100,7 @@ describe('BestElevenComponent - localStorage', () => {
       providers: [
         provideRouter([]),
         { provide: PlayerService, useValue: mockService },
+        { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ formation: '4-4-2' })) } },
       ],
     }).compileComponents();
 
@@ -1164,5 +1167,85 @@ describe('BestElevenComponent - localStorage', () => {
     const marked = freshComponent.markedPlayerUids();
     expect(marked.size).toBe(11);
     newPlayers.forEach(p => expect(marked.has(p.uid)).toBe(true));
+  });
+});
+
+// ── Formation-aware behavior ──────────────────────────────────────────────────
+
+describe('BestElevenComponent - formation-aware behavior', () => {
+  let fixture: ComponentFixture<BestElevenComponent>;
+  let component: BestElevenComponent;
+  let element: HTMLElement;
+  let playersSubject: BehaviorSubject<Player[]>;
+  let rolesSignal: ReturnType<typeof signal<RoleGroup>>;
+  let paramMapSubject: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
+
+  const createFixture = async (slug: string) => {
+    localStorage.clear();
+    playersSubject = new BehaviorSubject<Player[]>([]);
+    rolesSignal = signal<RoleGroup>({});
+    paramMapSubject = new BehaviorSubject(convertToParamMap({ formation: slug }));
+
+    const mockPlayerService = {
+      players$: playersSubject.asObservable(),
+      roles: rolesSignal,
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [BestElevenComponent],
+      providers: [
+        provideRouter([]),
+        { provide: PlayerService, useValue: mockPlayerService },
+        { provide: ActivatedRoute, useValue: { paramMap: paramMapSubject.asObservable() } },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(BestElevenComponent);
+    component = fixture.componentInstance;
+    element = fixture.nativeElement;
+  };
+
+  afterEach(() => {
+    localStorage.clear();
+    TestBed.resetTestingModule();
+  });
+
+  it('initializes arrays to correct length for 5-3-2 formation', async () => {
+    await createFixture('5-3-2');
+    fixture.detectChanges();
+    expect(component.selectedRoles().length).toBe(11);
+    expect(component.lockedPlayers().length).toBe(11);
+  });
+
+  it('renders correct slot labels for 4-2-3-1', async () => {
+    await createFixture('4-2-3-1');
+    fixture.detectChanges();
+    const labels = Array.from(element.querySelectorAll('.slot-label')).map(el => el.textContent?.trim());
+    expect(labels).toEqual(['GK', 'DL', 'DC', 'DC', 'DR', 'DM', 'DM', 'AML', 'AMC', 'AMR', 'ST']);
+  });
+
+  it('redirects to /best-eleven for invalid formation slug', async () => {
+    await createFixture('invalid-slug');
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    fixture.detectChanges();
+    expect(navigateSpy).toHaveBeenCalledWith(['/best-eleven']);
+  });
+
+  it('clears result on formation change', async () => {
+    await createFixture('4-4-2');
+    playersSubject.next(make11Players());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    component.selectedRoles.set(['SK', 'WB', 'BPD', 'BPD', 'WB', 'W', 'BBM', 'BBM', 'W', 'AF', 'AF']);
+    fixture.detectChanges();
+    component.calculate();
+    fixture.detectChanges();
+    expect(component.result()).not.toBeNull();
+
+    paramMapSubject.next(convertToParamMap({ formation: '4-3-3' }));
+    fixture.detectChanges();
+    expect(component.result()).toBeNull();
   });
 });

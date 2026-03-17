@@ -2,10 +2,12 @@ import { Routes } from '@angular/router';
 import { UploadComponent } from './components/upload/upload.component';
 import { PlayerTableComponent } from './components/player-table/player-table.component';
 import { BestElevenComponent } from './components/best-eleven/best-eleven.component';
+import { FormationPickerComponent } from './components/formation-picker/formation-picker.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'upload', pathMatch: 'full' },
   { path: 'upload', component: UploadComponent },
   { path: 'players', component: PlayerTableComponent },
-  { path: 'best-eleven', component: BestElevenComponent },
+  { path: 'best-eleven', component: FormationPickerComponent },
+  { path: 'best-eleven/:formation', component: BestElevenComponent },
 ];
