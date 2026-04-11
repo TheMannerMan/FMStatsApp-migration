@@ -127,6 +127,14 @@ describe('PlayerService', () => {
     expect(roles).toEqual(new Set<string>());
   });
 
+  it('setPlayers wipes any previously persisted activeRoles in localStorage', () => {
+    const svc = getService();
+    svc.setActiveRoles(new Set(['ST', 'CM']));
+    svc.setPlayers([mockPlayer(1)]);
+    const stored = JSON.parse(store['uploaded_players']);
+    expect(stored.activeRoles).toEqual([]);
+  });
+
   it('setPlayers replaces any previously stored players', async () => {
     const svc = getService();
     svc.setPlayers([mockPlayer(1)]);
