@@ -19,6 +19,8 @@
     <p-table
       [value]="players()"
       sortMode="single"
+      [customSort]="true"
+      (sortFunction)="customSort($event)"
       [scrollable]="true"
       scrollHeight="calc(100vh - var(--header-height) - 80px)"
       [virtualScroll]="true"
@@ -36,7 +38,9 @@
             </th>
           }
           @for (role of roleColumns(); track role.shortRoleName) {
-            <th [pSortableColumn]="role.shortRoleName">{{ role.shortRoleName }}</th>
+            <th [pSortableColumn]="role.shortRoleName">
+              {{ role.shortRoleName }} <p-sortIcon [field]="role.shortRoleName" />
+            </th>
           }
         </tr>
       </ng-template>
