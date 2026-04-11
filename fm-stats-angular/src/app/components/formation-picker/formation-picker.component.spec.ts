@@ -17,20 +17,20 @@ describe('FormationPickerComponent', () => {
     fixture.detectChanges();
   });
 
-  it('renders 9 formation cards', () => {
+  it('renders 10 formation cards', () => {
     const cards = fixture.nativeElement.querySelectorAll('.formation-card');
-    expect(cards.length).toBe(9);
+    expect(cards.length).toBe(10);
   });
 
   it('each card links to /best-eleven/:slug', () => {
     const links = fixture.nativeElement.querySelectorAll('a.formation-card');
-    expect(links.length).toBe(9);
+    expect(links.length).toBe(10);
     FORMATION_SLUGS.forEach((slug, i) => {
-      expect(links[i].getAttribute('href')).toBe(`/best-eleven/${slug}`);
+      expect(decodeURIComponent(links[i].getAttribute('href'))).toBe(`/best-eleven/${slug}`);
     });
   });
 
-  it('all 9 formation names visible in text', () => {
+  it('all 10 formation names visible in text', () => {
     const text: string = fixture.nativeElement.textContent;
     FORMATION_SLUGS.forEach(slug => {
       expect(text).toContain(slug);

@@ -118,6 +118,19 @@ export const FORMATIONS_CATALOG: Record<string, FormationSlot[]> = {
     { label: 'ST',  position: 'ST',  row: 3 },
     { label: 'AMR', position: 'AMR', row: 3 },
   ],
+  '5-2-3 DM Wide': [
+    { label: 'GK',  position: 'GK',  row: 0 },
+    { label: 'WBL', position: 'WBL', row: 1 },
+    { label: 'DC',  position: 'DC',  row: 1 },
+    { label: 'DC',  position: 'DC',  row: 1 },
+    { label: 'DC',  position: 'DC',  row: 1 },
+    { label: 'WBR', position: 'WBR', row: 1 },
+    { label: 'DM',  position: 'DM',  row: 2 },
+    { label: 'DM',  position: 'DM',  row: 2 },
+    { label: 'AML', position: 'AML', row: 3 },
+    { label: 'AMR', position: 'AMR', row: 3 },
+    { label: 'ST',  position: 'ST',  row: 3 },
+  ],
 };
 
 export const FORMATION_SLUGS: string[] = Object.keys(FORMATIONS_CATALOG);
