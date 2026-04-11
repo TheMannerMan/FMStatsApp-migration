@@ -41,25 +41,25 @@ describe('FORMATIONS_CATALOG', () => {
       const positions = FORMATIONS_CATALOG['5-2-3 DM Wide'].map(s => s.position);
       expect(positions).toEqual([
         'GK',
-        'WBL', 'DC', 'DC', 'DC', 'WBR',
-        'DM', 'DM',
-        'AML', 'AMR', 'ST',
+        'DC', 'DC', 'DC',
+        'WBL', 'DM', 'DM', 'WBR',
+        'AML', 'ST', 'AMR',
       ]);
     });
 
     it('has correct row assignments for each slot', () => {
       const slots = FORMATIONS_CATALOG['5-2-3 DM Wide'];
       expect(slots[0].row).toBe(0);   // GK
-      expect(slots[1].row).toBe(1);   // WBL
+      expect(slots[1].row).toBe(1);   // DC
       expect(slots[2].row).toBe(1);   // DC
       expect(slots[3].row).toBe(1);   // DC
-      expect(slots[4].row).toBe(1);   // DC
-      expect(slots[5].row).toBe(1);   // WBR
+      expect(slots[4].row).toBe(2);   // WBL
+      expect(slots[5].row).toBe(2);   // DM
       expect(slots[6].row).toBe(2);   // DM
-      expect(slots[7].row).toBe(2);   // DM
+      expect(slots[7].row).toBe(2);   // WBR
       expect(slots[8].row).toBe(3);   // AML
-      expect(slots[9].row).toBe(3);   // AMR
-      expect(slots[10].row).toBe(3);  // ST
+      expect(slots[9].row).toBe(3);   // ST
+      expect(slots[10].row).toBe(3);  // AMR
     });
   });
 });
