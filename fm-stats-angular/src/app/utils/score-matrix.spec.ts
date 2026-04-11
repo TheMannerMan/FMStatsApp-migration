@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getPlayerRoleScore, buildScoreMatrix, buildConstrainedScoreMatrix, applyPositionRestriction } from './score-matrix';
+import { getPlayerRoleScore, getBestRoleForPlayer, buildScoreMatrix, buildConstrainedScoreMatrix, applyPositionRestriction } from './score-matrix';
 import { Player } from '../models/player.model';
 
 const makePlayer = (overrides: Partial<Player> = {}): Player => ({
@@ -94,6 +94,63 @@ describe('getPlayerRoleScore', () => {
   });
 });
 
+describe('getBestRoleForPlayer', () => {
+  it('returns max score and winning role name', () => {
+    const player = makePlayer({
+      roles: [
+        { roleName: 'Sweeper Keeper', shortRoleName: 'SK', position: 'GK', roleScore: 8 },
+        { roleName: 'Goalkeeper', shortRoleName: 'GK', position: 'GK', roleScore: 6 },
+      ],
+    });
+
+    const result = getBestRoleForPlayer(player, ['SK', 'GK']);
+    expect(result.score).toBe(8);
+    expect(result.role).toBe('SK');
+  });
+
+  it('returns first candidate when all scores are 0', () => {
+    const player = makePlayer({ roles: [] });
+
+    const result = getBestRoleForPlayer(player, ['SK', 'GK']);
+    expect(result.score).toBe(0);
+    expect(result.role).toBe('SK');
+  });
+
+  it('returns null role when candidate list is empty', () => {
+    const player = makePlayer({ roles: [] });
+
+    const result = getBestRoleForPlayer(player, []);
+    expect(result.score).toBe(0);
+    expect(result.role).toBeNull();
+  });
+
+  it('uses first-match tie-breaking (strict > comparison)', () => {
+    const player = makePlayer({
+      roles: [
+        { roleName: 'Role A', shortRoleName: 'A', position: 'GK', roleScore: 7 },
+        { roleName: 'Role B', shortRoleName: 'B', position: 'GK', roleScore: 7 },
+      ],
+    });
+
+    const result = getBestRoleForPlayer(player, ['A', 'B']);
+    expect(result.score).toBe(7);
+    expect(result.role).toBe('A');
+  });
+
+  it('selects the last best if strictly greater later in the list', () => {
+    const player = makePlayer({
+      roles: [
+        { roleName: 'Role A', shortRoleName: 'A', position: 'GK', roleScore: 5 },
+        { roleName: 'Role B', shortRoleName: 'B', position: 'GK', roleScore: 9 },
+      ],
+    });
+
+    const result = getBestRoleForPlayer(player, ['A', 'B']);
+    expect(result.score).toBe(9);
+    expect(result.role).toBe('B');
+  });
+});
+
 describe('buildScoreMatrix', () => {
   it('returns NxM number matrix with correct scores', () => {
     const players = [
@@ -156,7 +213,7 @@ describe('buildConstrainedScoreMatrix', () => {
   const slotRoles = ['AF', 'CF'];
 
   it('excludes locked player and slot from matrix, returns correct mappings', () => {
-    const result = buildConstrainedScoreMatrix(players, slotRoles, [
+    const result = buildConstrainedScoreMatrix(players, slotRoles, slotRoles.map(() => []), [
       { slotIndex: 0, playerIndex: 0 },
     ]);
     expect(result.matrix).toEqual([[8], [4]]);
@@ -165,7 +222,7 @@ describe('buildConstrainedScoreMatrix', () => {
   });
 
   it('returns empty matrix when all slots are locked', () => {
-    const result = buildConstrainedScoreMatrix(players, slotRoles, [
+    const result = buildConstrainedScoreMatrix(players, slotRoles, slotRoles.map(() => []), [
       { slotIndex: 0, playerIndex: 0 },
       { slotIndex: 1, playerIndex: 1 },
     ]);
@@ -175,7 +232,7 @@ describe('buildConstrainedScoreMatrix', () => {
   });
 
   it('returns full matrix with identity mappings when no locks', () => {
-    const result = buildConstrainedScoreMatrix(players, slotRoles, []);
+    const result = buildConstrainedScoreMatrix(players, slotRoles, slotRoles.map(() => []), []);
     expect(result.matrix).toEqual([
       [9, 7],
       [6, 8],
@@ -183,6 +240,77 @@ describe('buildConstrainedScoreMatrix', () => {
     ]);
     expect(result.rowMap).toEqual([0, 1, 2]);
     expect(result.colMap).toEqual([0, 1]);
+  });
+
+  it('bestRoles mirrors slotRoles for manual slots', () => {
+    const result = buildConstrainedScoreMatrix(players, slotRoles, slotRoles.map(() => []), []);
+    expect(result.bestRoles[0][0]).toBe('AF');
+    expect(result.bestRoles[0][1]).toBe('CF');
+    expect(result.bestRoles[2][0]).toBe('AF');
+  });
+
+  describe('auto slots', () => {
+    it('all-null slotRoles: each cell equals best score across candidateRoles', () => {
+      // Two auto slots. Slot 0 candidates: ['AF', 'CF'], slot 1 candidates: ['AF']
+      const nullRoles: (string | null)[] = [null, null];
+      const candidateRoles = [['AF', 'CF'], ['AF']];
+
+      const result = buildConstrainedScoreMatrix(players, nullRoles, candidateRoles, []);
+
+      // Player 0 (AF=9, CF=7): best for slot0=9, best for slot1=9
+      // Player 1 (AF=6, CF=8): best for slot0=8, best for slot1=6
+      // Player 2 (AF=5, CF=4): best for slot0=5, best for slot1=5
+      expect(result.matrix[0][0]).toBe(9); // player0, slot0: max(AF=9,CF=7)=9
+      expect(result.matrix[0][1]).toBe(9); // player0, slot1: max(AF=9)=9
+      expect(result.matrix[1][0]).toBe(8); // player1, slot0: max(AF=6,CF=8)=8
+      expect(result.matrix[1][1]).toBe(6); // player1, slot1: max(AF=6)=6
+      expect(result.matrix[2][0]).toBe(5); // player2, slot0: max(AF=5,CF=4)=5
+      expect(result.matrix[2][1]).toBe(5); // player2, slot1: max(AF=5)=5
+    });
+
+    it('auto slot bestRoles stores the winning role', () => {
+      const nullRoles: (string | null)[] = [null];
+      const candidateRoles = [['AF', 'CF']];
+
+      const result = buildConstrainedScoreMatrix(players, nullRoles, candidateRoles, []);
+
+      expect(result.bestRoles[0][0]).toBe('AF'); // player0: AF=9 beats CF=7
+      expect(result.bestRoles[1][0]).toBe('CF'); // player1: CF=8 beats AF=6
+      expect(result.bestRoles[2][0]).toBe('AF'); // player2: AF=5 beats CF=4
+    });
+
+    it('empty candidate list for auto slot: entire column is 0 and bestRoles is null', () => {
+      const nullRoles: (string | null)[] = [null];
+      const candidateRoles: string[][] = [[]];
+
+      const result = buildConstrainedScoreMatrix(players, nullRoles, candidateRoles, []);
+
+      expect(result.matrix[0][0]).toBe(0);
+      expect(result.matrix[1][0]).toBe(0);
+      expect(result.matrix[2][0]).toBe(0);
+      expect(result.bestRoles[0][0]).toBeNull();
+      expect(result.bestRoles[1][0]).toBeNull();
+      expect(result.bestRoles[2][0]).toBeNull();
+    });
+
+    it('mixed manual and auto: manual columns behave as today', () => {
+      // Slot 0 = manual 'AF', slot 1 = auto with candidates ['CF']
+      const mixedRoles: (string | null)[] = ['AF', null];
+      const candidateRoles = [[], ['CF']];
+
+      const result = buildConstrainedScoreMatrix(players, mixedRoles, candidateRoles, []);
+
+      // Manual slot (AF): scores from getPlayerRoleScore
+      expect(result.matrix[0][0]).toBe(9); // player0, AF=9
+      expect(result.matrix[1][0]).toBe(6); // player1, AF=6
+      // Auto slot (CF candidates): best score = CF score
+      expect(result.matrix[0][1]).toBe(7); // player0, CF=7
+      expect(result.matrix[1][1]).toBe(8); // player1, CF=8
+      // bestRoles for manual = the role itself
+      expect(result.bestRoles[0][0]).toBe('AF');
+      // bestRoles for auto = best candidate
+      expect(result.bestRoles[0][1]).toBe('CF');
+    });
   });
 });
 
@@ -199,6 +327,7 @@ describe('applyPositionRestriction', () => {
       makePlayerWithPosition(1, 'ST (C)'),
     ];
     const slotPositions = ['GK', 'ST'];
+    const slotRoles: (string | null)[] = ['SK', 'AF'];
     const rowMap = [0, 1];
     const colMap = [0, 1];
     const matrix = [
@@ -206,7 +335,7 @@ describe('applyPositionRestriction', () => {
       [3, 8], // ST player: 3 for GK slot, 8 for ST slot
     ];
 
-    applyPositionRestriction(matrix, players, slotPositions, rowMap, colMap);
+    applyPositionRestriction(matrix, players, slotPositions, slotRoles, rowMap, colMap);
 
     // GK player ineligible for ST slot → zeroed
     expect(matrix[0][1]).toBe(0);
@@ -220,11 +349,12 @@ describe('applyPositionRestriction', () => {
   it('retains scores for eligible pairs', () => {
     const players = [makePlayerWithPosition(0, 'D (LC)')];
     const slotPositions = ['DL'];
+    const slotRoles: (string | null)[] = ['WB'];
     const rowMap = [0];
     const colMap = [0];
     const matrix = [[7]];
 
-    applyPositionRestriction(matrix, players, slotPositions, rowMap, colMap);
+    applyPositionRestriction(matrix, players, slotPositions, slotRoles, rowMap, colMap);
 
     expect(matrix[0][0]).toBe(7);
   });
@@ -232,13 +362,43 @@ describe('applyPositionRestriction', () => {
   it('zeroes all slots for a player with no matching positions', () => {
     const players = [makePlayerWithPosition(0, 'GK')];
     const slotPositions = ['ST', 'DC'];
+    const slotRoles: (string | null)[] = ['AF', 'BPD'];
     const rowMap = [0];
     const colMap = [0, 1];
     const matrix = [[6, 4]];
 
-    applyPositionRestriction(matrix, players, slotPositions, rowMap, colMap);
+    applyPositionRestriction(matrix, players, slotPositions, slotRoles, rowMap, colMap);
 
     expect(matrix[0][0]).toBe(0);
     expect(matrix[0][1]).toBe(0);
+  });
+
+  it('zeroes auto-role slots when player is ineligible for the position', () => {
+    // Player is GK, slot is ST — auto slot (role is null), but restriction applies
+    const players = [makePlayerWithPosition(0, 'GK')];
+    const slotPositions = ['ST'];
+    const slotRoles: (string | null)[] = [null]; // auto slot
+    const rowMap = [0];
+    const colMap = [0];
+    const matrix = [[6]];
+
+    applyPositionRestriction(matrix, players, slotPositions, slotRoles, rowMap, colMap);
+
+    // Ineligible → zeroed even for auto slot
+    expect(matrix[0][0]).toBe(0);
+  });
+
+  it('mixed: both manual and auto slots zeroed when player ineligible for position', () => {
+    const players = [makePlayerWithPosition(0, 'GK')];
+    const slotPositions = ['ST', 'DR'];
+    const slotRoles: (string | null)[] = ['AF', null]; // slot0 manual, slot1 auto
+    const rowMap = [0];
+    const colMap = [0, 1];
+    const matrix = [[5, 9]];
+
+    applyPositionRestriction(matrix, players, slotPositions, slotRoles, rowMap, colMap);
+
+    expect(matrix[0][0]).toBe(0); // GK player ineligible for ST manual slot → zeroed
+    expect(matrix[0][1]).toBe(0); // GK player ineligible for DR auto slot → also zeroed
   });
 });

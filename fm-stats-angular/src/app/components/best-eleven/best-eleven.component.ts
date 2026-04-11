@@ -20,7 +20,7 @@ import { PlayerPickerModalComponent } from '../player-picker-modal/player-picker
 export interface ResultEntry {
   slot: FormationSlot;
   player: Player;
-  role: string;
+  role: string | null;
   score: number;
 }
 
@@ -150,7 +150,6 @@ export class BestElevenComponent {
 
   protected canCalculate = computed(() => {
     if (!this.hasEnoughPlayers()) return false;
-    if (!this.selectedRoles().every(r => r !== null)) return false;
     if (this.positionRestriction() && this.positionRestrictionErrors().length > 0) return false;
     return true;
   });
@@ -300,9 +299,14 @@ export class BestElevenComponent {
   }
 
   protected onRoleChange(slotIndex: number, roleName: string | null): void {
-    const current = [...this.selectedRoles()];
-    current[slotIndex] = roleName;
-    this.selectedRoles.set(current);
+    const roles = [...this.selectedRoles()];
+    roles[slotIndex] = roleName;
+    this.selectedRoles.set(roles);
+    if (roleName === null && this.lockedPlayers()[slotIndex] !== null) {
+      const locks = [...this.lockedPlayers()];
+      locks[slotIndex] = null;
+      this.lockedPlayers.set(locks);
+    }
     this.result.set(null);
   }
 
@@ -398,7 +402,9 @@ export class BestElevenComponent {
     if (!this.canCalculate()) return;
     const formation = this.formation()!;
     const players = this.eligiblePlayers();
-    const slotRoles = this.selectedRoles() as string[];
+    const slotRoles = this.selectedRoles();
+    const slotCandidateRoles = this.availableRolesForSlot()
+      .map(rs => rs.map(r => r.shortRoleName));
     const locks = this.lockedPlayers();
 
     // Build locked pairs
@@ -412,21 +418,23 @@ export class BestElevenComponent {
       }
     });
 
-    // Pre-build locked entries
+    // Pre-build locked entries (locked slots always have a manually-selected role)
     const lockedEntries: ResultEntry[] = lockedPairs.map(lp => ({
       slot: formation[lp.slotIndex],
       player: players[lp.playerIndex],
-      role: slotRoles[lp.slotIndex],
-      score: getPlayerRoleScore(players[lp.playerIndex], slotRoles[lp.slotIndex]),
+      role: slotRoles[lp.slotIndex] as string,
+      score: getPlayerRoleScore(players[lp.playerIndex], slotRoles[lp.slotIndex] as string),
     }));
 
     // Build constrained matrix and run Hungarian on free slots
-    const { matrix, rowMap, colMap } = buildConstrainedScoreMatrix(
-      players, slotRoles, lockedPairs
+    const { matrix, bestRoles, rowMap, colMap } = buildConstrainedScoreMatrix(
+      players, slotRoles, slotCandidateRoles, lockedPairs,
     );
 
     if (this.positionRestriction() && matrix.length > 0) {
-      applyPositionRestriction(matrix, players, formation.map(s => s.position), rowMap, colMap);
+      applyPositionRestriction(
+        matrix, players, formation.map(s => s.position), slotRoles, rowMap, colMap,
+      );
     }
 
     let freeEntries: ResultEntry[] = [];
@@ -435,7 +443,7 @@ export class BestElevenComponent {
       freeEntries = assignments.map(a => ({
         slot: formation[colMap[a.slotIndex]],
         player: players[rowMap[a.playerIndex]],
-        role: slotRoles[colMap[a.slotIndex]],
+        role: bestRoles[a.playerIndex][a.slotIndex],
         score: a.score,
       }));
     }

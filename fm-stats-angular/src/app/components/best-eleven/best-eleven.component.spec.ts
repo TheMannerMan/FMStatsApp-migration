@@ -95,14 +95,14 @@ describe('BestElevenComponent', () => {
     element = fixture.nativeElement;
   });
 
-  it('disables calculate button when not all roles are selected', () => {
+  it('enables calculate button when all roles are null and >= 11 players are marked', () => {
     playersSubject.next(make11Players());
     rolesSignal.set(makeRoles());
     fixture.detectChanges();
 
     const button = element.querySelector('.calculate-btn') as HTMLButtonElement;
     expect(button).toBeTruthy();
-    expect(button.disabled).toBe(true);
+    expect(button.disabled).toBe(false);
   });
 
   it('disables calculate button when fewer than 11 players', () => {
@@ -301,7 +301,7 @@ describe('BestElevenComponent', () => {
     expect(component.lockedPlayers().every(l => l === null)).toBe(true);
   });
 
-  it('does not affect canCalculate when lock-in is set but role is missing', () => {
+  it('canCalculate is true when a lock is set with no role (lock-without-role prevented by UI)', () => {
     playersSubject.next(make11Players());
     rolesSignal.set(makeRoles());
     fixture.detectChanges();
@@ -312,7 +312,7 @@ describe('BestElevenComponent', () => {
 
     fixture.detectChanges();
 
-    expect(component['canCalculate']()).toBe(false);
+    expect(component['canCalculate']()).toBe(true);
   });
 
   it('handles all 11 slots locked', () => {
@@ -1073,6 +1073,196 @@ describe('BestElevenComponent', () => {
     expect(page).toBeTruthy();
     // No inline max-width should be applied by Angular (the constraint was in the stylesheet)
     expect(page.style.maxWidth).toBe('');
+  });
+
+  // ── Auto role selection ───────────────────────────────────────────────────
+
+  describe('auto role selection', () => {
+    it('canCalculate is true when selectedRoles is all-null and >= 11 players are marked', () => {
+      playersSubject.next(make11Players());
+      rolesSignal.set(makeRoles());
+      fixture.detectChanges();
+
+      expect(component['selectedRoles']().every(r => r === null)).toBe(true);
+      expect(component['canCalculate']()).toBe(true);
+    });
+
+    it('calculate with all roles null produces 11 result entries, each with a non-null role', () => {
+      playersSubject.next(make11Players());
+      rolesSignal.set(makeRoles());
+      fixture.detectChanges();
+
+      component.calculate();
+      fixture.detectChanges();
+
+      const result = component.result();
+      expect(result).not.toBeNull();
+      expect(result!.length).toBe(11);
+
+      // All roles are non-null and no duplicate players
+      result!.forEach(e => expect(e.role).not.toBeNull());
+      const uids = result!.map(e => e.player.uid);
+      expect(new Set(uids).size).toBe(11);
+    });
+
+    it('calculate with all roles null uses a role from the slot candidate set', () => {
+      playersSubject.next(make11Players());
+      rolesSignal.set(makeRoles());
+      fixture.detectChanges();
+
+      component.calculate();
+      fixture.detectChanges();
+
+      const result = component.result()!;
+      const formation = component['formation']()!;
+      const allRolesFlat = Object.values(makeRoles()).flat();
+
+      result.forEach(entry => {
+        const slotIndex = formation.indexOf(entry.slot);
+        const candidateRoleNames = allRolesFlat
+          .filter(r => r.positions.includes(formation[slotIndex].position))
+          .map(r => r.shortRoleName);
+        expect(candidateRoleNames).toContain(entry.role);
+      });
+    });
+
+    it('mix: one manual role is respected, auto slots get roles from candidate set', () => {
+      playersSubject.next(make11Players());
+      rolesSignal.set(makeRoles());
+      fixture.detectChanges();
+
+      // Manually set SK for GK slot (index 0), leave rest auto
+      const roles = new Array(11).fill(null) as (string | null)[];
+      roles[0] = 'SK';
+      component.selectedRoles.set(roles);
+      fixture.detectChanges();
+
+      component.calculate();
+      fixture.detectChanges();
+
+      const result = component.result()!;
+      expect(result).not.toBeNull();
+      expect(result.length).toBe(11);
+
+      const formation = component['formation']()!;
+      const gkEntry = result.find(e => e.slot === formation[0]);
+      expect(gkEntry!.role).toBe('SK');
+    });
+
+    it('auto-role slots + restriction ON + eligible players: no errors, canCalculate true, 11 entries produced', () => {
+      // make11PlayersWithPositions() has correct positions for the 4-4-2 formation
+      // With restriction ON and all slots auto, each position has eligible players → no errors
+      playersSubject.next(make11PlayersWithPositions());
+      rolesSignal.set(makeRoles());
+      fixture.detectChanges();
+
+      component.onToggleRestriction();
+      fixture.detectChanges();
+
+      expect(component['positionRestrictionErrors']().length).toBe(0);
+      expect(component['canCalculate']()).toBe(true);
+
+      component.calculate();
+      fixture.detectChanges();
+
+      const result = component.result()!;
+      expect(result).not.toBeNull();
+      expect(result.length).toBe(11);
+    });
+
+    it('auto-role score equals the player best role score for the slot position', () => {
+      // Single GK player with SK=6; all other players have no GK roles
+      const players = [
+        makePlayer(1, 'Keeper', [{ shortRoleName: 'SK', position: 'GK', roleScore: 6 }]),
+        ...make11Players().slice(1),
+      ];
+      playersSubject.next(players);
+      rolesSignal.set(makeRoles());
+      fixture.detectChanges();
+
+      component.calculate();
+      fixture.detectChanges();
+
+      const result = component.result()!;
+      const formation = component['formation']()!;
+      const gkEntry = result.find(e => e.slot === formation[0]);
+
+      expect(gkEntry!.role).toBe('SK');
+      expect(gkEntry!.score).toBe(6);
+    });
+
+    it('setting onRoleChange to null clears result and puts slot in auto mode', () => {
+      playersSubject.next(make11Players());
+      rolesSignal.set(makeRoles());
+      fixture.detectChanges();
+
+      // Set a manual role, calculate, then clear it
+      const roles = new Array(11).fill(null) as (string | null)[];
+      roles[0] = 'SK';
+      component.selectedRoles.set(roles);
+      component.calculate();
+      fixture.detectChanges();
+
+      expect(component.result()).not.toBeNull();
+
+      component['onRoleChange'](0, null);
+      fixture.detectChanges();
+
+      expect(component.result()).toBeNull();
+      expect(component['selectedRoles']()[0]).toBeNull();
+
+      // Can still calculate (slot is now auto)
+      component.calculate();
+      fixture.detectChanges();
+      expect(component.result()).not.toBeNull();
+      expect(component.result()!.length).toBe(11);
+    });
+
+    it('clearing a role on a locked slot also clears the lock', () => {
+      playersSubject.next(make11Players());
+      rolesSignal.set(makeRoles());
+      fixture.detectChanges();
+
+      const roles = new Array(11).fill(null) as (string | null)[];
+      roles[0] = 'SK';
+      component.selectedRoles.set(roles);
+
+      const locks = new Array(11).fill(null) as (number | null)[];
+      locks[0] = 1;
+      component.lockedPlayers.set(locks);
+
+      fixture.detectChanges();
+
+      expect(component['lockedPlayers']()[0]).toBe(1);
+
+      component['onRoleChange'](0, null);
+      fixture.detectChanges();
+
+      expect(component['lockedPlayers']()[0]).toBeNull();
+    });
+
+    it('empty candidate set for auto slot: result entry has score 0 and role null', () => {
+      // Override roles to exclude GK roles → GK slot has no candidates
+      const roles = makeRoles();
+      const noGkRoles: RoleGroup = {
+        Defender: roles['Defender'],
+        Midfielder: roles['Midfielder'],
+        Attacker: roles['Attacker'],
+      };
+      playersSubject.next(make11Players());
+      rolesSignal.set(noGkRoles);
+      fixture.detectChanges();
+
+      component.calculate();
+      fixture.detectChanges();
+
+      const result = component.result()!;
+      const formation = component['formation']()!;
+      const gkEntry = result.find(e => e.slot === formation[0]);
+
+      expect(gkEntry!.score).toBe(0);
+      expect(gkEntry!.role).toBeNull();
+    });
   });
 });
 
