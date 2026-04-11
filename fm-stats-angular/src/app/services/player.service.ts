@@ -56,9 +56,8 @@ export class PlayerService {
   }
 
   setPlayers(players: Player[]): void {
-    const allRoles = new Set(players.flatMap(p => p.roles.map(r => r.shortRoleName)));
     this.playersSubject.next(players);
-    this.activeRolesSubject.next(allRoles);
+    this.activeRolesSubject.next(new Set<string>());
     this.persist();
   }
 

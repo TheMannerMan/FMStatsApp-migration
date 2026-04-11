@@ -120,11 +120,11 @@ describe('PlayerService', () => {
     expect(stored.players).toEqual([p]);
   });
 
-  it('setPlayers resets activeRoles to all roles in the uploaded list', async () => {
+  it('setPlayers resets activeRoles to an empty set', async () => {
     const svc = getService();
     svc.setPlayers([mockPlayer(1)]);
     const roles = await firstValueFrom(svc.activeRoles$);
-    expect(roles).toEqual(new Set(['ST']));
+    expect(roles).toEqual(new Set<string>());
   });
 
   it('setPlayers replaces any previously stored players', async () => {
