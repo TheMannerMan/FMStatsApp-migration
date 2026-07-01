@@ -1,8 +1,23 @@
 <div class="best-eleven-page">
-  <h2 class="page-title">
-    <a routerLink="/best-eleven" class="back-link">&larr;</a>
-    Best XI &mdash; {{ formationSlug() }}
-  </h2>
+  <div class="page-header">
+    <h2 class="page-title">Best XI &mdash; {{ formationSlug() }}</h2>
+    <div class="page-toolbar">
+      <button
+        pButton
+        class="reset-settings-btn"
+        label="Reset settings"
+        (click)="resetSettings()"
+        severity="secondary"
+      ></button>
+      <button
+        pButton
+        class="change-formation-btn"
+        label="Change formation"
+        routerLink="/best-eleven"
+        severity="secondary"
+      ></button>
+    </div>
+  </div>
 
   @if (!hasEnoughPlayers()) {
     <p class="warning-message">At least 11 players must be uploaded</p>
@@ -74,15 +89,7 @@
       }
 
       <div class="actions">
-        @if (result()) {
-          <button
-            pButton
-            class="reset-btn"
-            label="Reset"
-            (click)="reset()"
-            severity="secondary"
-          ></button>
-        } @else {
+        @if (!result()) {
           <button
             pButton
             class="calculate-btn"
@@ -100,7 +107,7 @@
         <button
           pButton
           class="mark-all-btn"
-          label="Reset"
+          label="Reset filtered players"
           severity="secondary"
           [disabled]="allMarked()"
           (click)="markAll()"
@@ -110,6 +117,7 @@
           type="text"
           class="roster-search"
           placeholder="Search players..."
+          [ngModel]="searchQuery()"
           (input)="onSearchInput($event)"
         />
         <div class="roster-column-headers">
@@ -143,6 +151,7 @@
               <button
                 class="toggle-mark-btn"
                 [class.unmark-mode]="markedPlayerUids().has(player.uid)"
+                [class.mark-mode]="!markedPlayerUids().has(player.uid)"
                 [attr.aria-label]="markedPlayerUids().has(player.uid) ? 'Remove from squad' : 'Add to squad'"
                 (click)="toggleMark(player.uid)"
               >

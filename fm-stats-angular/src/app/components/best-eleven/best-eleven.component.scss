@@ -2,11 +2,27 @@
   padding: 1rem 1.5rem;
 }
 
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
 .page-title {
-  margin: 0 0 1.5rem;
+  margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--color-text-primary);
+}
+
+.page-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .warning-message {
@@ -152,6 +168,10 @@
 .mark-all-btn {
   width: 100%;
   margin-bottom: 0.75rem;
+
+  &:disabled {
+    opacity: 0.42;
+  }
 }
 
 .roster-search {
@@ -255,8 +275,8 @@
 }
 
 .toggle-mark-btn {
-  background: none;
-  border: none;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
   cursor: pointer;
   padding: 0.25rem;
   display: flex;
@@ -267,23 +287,39 @@
   flex-shrink: 0;
   border-radius: 4px;
   color: var(--color-text-secondary);
-  font-size: 0.75rem;
-  transition: background 0.15s, color 0.15s;
+  font-size: 0.8rem;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 
   &:hover {
     background: var(--color-border);
   }
 
   &.unmark-mode {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.55);
     color: #ef4444;
 
     &:hover {
-      background: rgba(239, 68, 68, 0.1);
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
     }
+  }
+
+  &.mark-mode {
+    color: var(--color-text-primary);
   }
 }
 
 @media (max-width: 900px) {
+  .page-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .page-toolbar {
+    justify-content: flex-start;
+  }
+
   .page-layout {
     flex-direction: column;
   }

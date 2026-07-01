@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { provideRouter, ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { BestElevenComponent } from './best-eleven.component';
 import { PlayerService } from '../../services/player.service';
+import { BestElevenStateService } from '../../services/best-eleven-state.service';
 import { Player } from '../../models/player.model';
 import { RoleGroup } from '../../models/role-group.model';
 import { signal } from '@angular/core';
@@ -86,6 +87,7 @@ describe('BestElevenComponent', () => {
       providers: [
         provideRouter([]),
         { provide: PlayerService, useValue: mockPlayerService },
+        { provide: BestElevenStateService, useFactory: () => new BestElevenStateService() },
         { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ formation: '4-4-2' })) } },
       ],
     }).compileComponents();
@@ -276,7 +278,7 @@ describe('BestElevenComponent', () => {
     });
   });
 
-  it('clears lock-in selections on reset', () => {
+  it('clears all Best XI settings on Reset settings', () => {
     playersSubject.next(make11Players());
     rolesSignal.set(makeRoles());
     fixture.detectChanges();
@@ -288,17 +290,54 @@ describe('BestElevenComponent', () => {
     component.selectedRoles.set([
       'SK', 'WB', 'BPD', 'BPD', 'WB', 'W', 'BBM', 'BBM', 'W', 'AF', 'AF',
     ]);
+    component.toggleMark(11);
+    component.positionRestriction.set(true);
+    component.searchQuery.set('keeper');
+    component.sortColumn.set('name');
+    component.sortDirection.set('desc');
     fixture.detectChanges();
 
     component.calculate();
     fixture.detectChanges();
 
-    const resetBtn = element.querySelector('.reset-btn') as HTMLButtonElement;
+    const resetBtn = element.querySelector('.reset-settings-btn') as HTMLButtonElement;
     resetBtn.click();
     fixture.detectChanges();
 
     expect(component.result()).toBeNull();
+    expect(component.selectedRoles().every(r => r === null)).toBe(true);
     expect(component.lockedPlayers().every(l => l === null)).toBe(true);
+    expect(component.markedPlayerUids().size).toBe(11);
+    expect(component.positionRestriction()).toBe(false);
+    expect(component.searchQuery()).toBe('');
+    expect(component.sortColumn()).toBeNull();
+    expect(component.sortDirection()).toBe('asc');
+  });
+
+  it('places Reset settings and Change formation in the page toolbar', () => {
+    playersSubject.next(make11Players());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    const toolbar = element.querySelector('.page-toolbar') as HTMLElement;
+    const actions = element.querySelector('.actions') as HTMLElement;
+
+    expect(toolbar.querySelector('.reset-settings-btn')).toBeTruthy();
+    expect(toolbar.querySelector('.change-formation-btn')).toBeTruthy();
+    expect(actions.querySelector('.reset-settings-btn')).toBeNull();
+    expect(actions.querySelector('.change-formation-btn')).toBeNull();
+  });
+
+  it('keeps Calculate Best XI as the only action near the formation result area', () => {
+    playersSubject.next(make11Players());
+    rolesSignal.set(makeRoles());
+    fixture.detectChanges();
+
+    const actions = element.querySelector('.actions') as HTMLElement;
+    expect(actions.querySelector('.calculate-btn')).toBeTruthy();
+    expect(actions.textContent).toContain('Calculate Best XI');
+    expect(actions.textContent).not.toContain('Reset settings');
+    expect(actions.textContent).not.toContain('Change formation');
   });
 
   it('canCalculate is true when a lock is set with no role (lock-without-role prevented by UI)', () => {
@@ -383,7 +422,7 @@ describe('BestElevenComponent', () => {
     make11Players().forEach(p => expect(marked.has(p.uid)).toBe(true));
   });
 
-  it('Reset button is disabled when all players are already marked', () => {
+  it('Reset filtered players button is disabled when all players are already marked', () => {
     playersSubject.next(make11Players());
     rolesSignal.set(makeRoles());
     fixture.detectChanges();
@@ -391,7 +430,7 @@ describe('BestElevenComponent', () => {
     const btn = element.querySelector('.mark-all-btn') as HTMLButtonElement;
     expect(btn).toBeTruthy();
     expect(btn.disabled).toBe(true);
-    expect(btn.textContent?.trim()).toContain('Reset');
+    expect(btn.textContent?.trim()).toContain('Reset filtered players');
   });
 
   // ── Step 2: eligiblePlayers + hasEnoughPlayers ────────────────────────────
@@ -1266,23 +1305,22 @@ describe('BestElevenComponent', () => {
   });
 });
 
-// ── Step 4: localStorage persistence ─────────────────────────────────────────
+// ── Step 4: session state persistence ────────────────────────────────────────
 
-describe('BestElevenComponent - localStorage', () => {
+describe('BestElevenComponent - session state', () => {
   let freshSubject: BehaviorSubject<Player[]>;
   let freshComponent: BestElevenComponent;
   let freshFixture: ComponentFixture<BestElevenComponent>;
+  let sharedState: BestElevenStateService;
+  let rolesSignal: ReturnType<typeof signal<RoleGroup>>;
 
-  const createComponent = async (storedUids?: number[]) => {
-    localStorage.clear();
-    if (storedUids !== undefined) {
-      localStorage.setItem('best_xi_marked_players', JSON.stringify(storedUids));
-    }
-
-    freshSubject = new BehaviorSubject<Player[]>([]);
+  const configureTestingModule = async () => {
+    freshSubject = new BehaviorSubject<Player[]>(make11Players());
+    rolesSignal = signal<RoleGroup>(makeRoles());
+    sharedState = new BestElevenStateService();
     const mockService = {
       players$: freshSubject.asObservable(),
-      roles: signal<RoleGroup>({}),
+      roles: rolesSignal,
     };
 
     await TestBed.configureTestingModule({
@@ -1290,60 +1328,71 @@ describe('BestElevenComponent - localStorage', () => {
       providers: [
         provideRouter([]),
         { provide: PlayerService, useValue: mockService },
+        { provide: BestElevenStateService, useValue: sharedState },
         { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ formation: '4-4-2' })) } },
       ],
     }).compileComponents();
+  };
 
+  const createComponent = () => {
     freshFixture = TestBed.createComponent(BestElevenComponent);
     freshComponent = freshFixture.componentInstance;
+    freshFixture.detectChanges();
   };
 
   afterEach(() => {
-    localStorage.clear();
     TestBed.resetTestingModule();
   });
 
-  it('persists marked state to localStorage when marks change', async () => {
-    await createComponent();
-    freshSubject.next(make11Players());
+  it('keeps Best XI settings when the component is recreated for the same formation', async () => {
+    await configureTestingModule();
+    createComponent();
+
+    freshComponent.selectedRoles.set([
+      'SK', 'WB', 'BPD', 'BPD', 'WB', 'W', 'BBM', 'BBM', 'W', 'AF', 'AF',
+    ]);
+    const locks = new Array(11).fill(null) as (number | null)[];
+    locks[0] = 1;
+    freshComponent.lockedPlayers.set(locks);
+    freshComponent.searchQuery.set('keeper');
+    freshComponent.sortColumn.set('position');
+    freshComponent.sortDirection.set('desc');
+    freshComponent.calculate();
+    freshComponent.toggleMark(11);
+    freshComponent.positionRestriction.set(true);
     freshFixture.detectChanges();
 
-    freshComponent.toggleMark(1);
-    freshFixture.detectChanges();
+    expect(freshComponent.result()).not.toBeNull();
+    freshFixture.destroy();
+    createComponent();
 
-    const stored: number[] = JSON.parse(localStorage.getItem('best_xi_marked_players') || '[]');
-    expect(stored).not.toContain(1);
-    // remaining 10 players should be stored
-    [2, 3, 4, 5, 6, 7, 8, 9, 10, 11].forEach(uid => expect(stored).toContain(uid));
+    expect(freshComponent.selectedRoles()[0]).toBe('SK');
+    expect(freshComponent.lockedPlayers()[0]).toBe(1);
+    expect(freshComponent.markedPlayerUids().has(11)).toBe(false);
+    expect(freshComponent.positionRestriction()).toBe(true);
+    expect(freshComponent.searchQuery()).toBe('keeper');
+    expect(freshComponent.sortColumn()).toBe('position');
+    expect(freshComponent.sortDirection()).toBe('desc');
+    expect(freshComponent.result()).not.toBeNull();
   });
 
-  it('restores marked state from localStorage on init', async () => {
-    await createComponent([1, 2, 3, 4, 5]);
-    freshSubject.next(make11Players());
-    freshFixture.detectChanges();
+  it('Change formation links to the formation picker', async () => {
+    await configureTestingModule();
+    createComponent();
+    const router = TestBed.inject(Router);
+    const navigateByUrlSpy = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
 
-    const marked = freshComponent.markedPlayerUids();
-    expect(marked.has(1)).toBe(true);
-    expect(marked.has(5)).toBe(true);
-    expect(marked.has(6)).toBe(false);
-    expect(marked.has(11)).toBe(false);
-  });
+    const button = freshFixture.nativeElement.querySelector('.change-formation-btn') as HTMLElement;
+    expect(button).toBeTruthy();
+    button.click();
 
-  it('silently ignores stale UIDs from localStorage on restore', async () => {
-    await createComponent([1, 2, 3, 99]); // uid 99 does not exist in the upload
-    freshSubject.next(make11Players()); // UIDs 1-11
-    freshFixture.detectChanges();
-
-    const marked = freshComponent.markedPlayerUids();
-    expect(marked.has(99)).toBe(false);
-    expect(marked.has(1)).toBe(true);
-    expect(marked.has(3)).toBe(true);
+    expect(navigateByUrlSpy).toHaveBeenCalled();
+    expect(navigateByUrlSpy.mock.calls[0][0].toString()).toBe('/best-eleven');
   });
 
   it('resets all players to marked on new upload with different UIDs', async () => {
-    await createComponent();
-    freshSubject.next(make11Players());
-    freshFixture.detectChanges();
+    await configureTestingModule();
+    createComponent();
 
     freshComponent.toggleMark(1);
     freshFixture.detectChanges();
@@ -1386,6 +1435,7 @@ describe('BestElevenComponent - formation-aware behavior', () => {
       providers: [
         provideRouter([]),
         { provide: PlayerService, useValue: mockPlayerService },
+        { provide: BestElevenStateService, useFactory: () => new BestElevenStateService() },
         { provide: ActivatedRoute, useValue: { paramMap: paramMapSubject.asObservable() } },
       ],
     }).compileComponents();

@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal, effect } from '@angular/core';
+import { Component, inject, computed, signal, effect, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,18 +11,14 @@ import { Player } from '../../models/player.model';
 import { RoleInfo } from '../../models/role-group.model';
 import { FormationSlot } from '../../models/formation.model';
 import { FORMATIONS_CATALOG } from '../../models/formations-catalog';
+import { BestElevenResultEntry, BestElevenStateService } from '../../services/best-eleven-state.service';
 import { getPlayerRoleScore, buildConstrainedScoreMatrix, applyPositionRestriction } from '../../utils/score-matrix';
 import { isPlayerEligibleForSlot } from '../../utils/position-eligibility';
 import { hungarian } from '../../utils/hungarian';
 import { RolePickerModalComponent } from '../role-picker-modal/role-picker-modal.component';
 import { PlayerPickerModalComponent } from '../player-picker-modal/player-picker-modal.component';
 
-export interface ResultEntry {
-  slot: FormationSlot;
-  player: Player;
-  role: string | null;
-  score: number;
-}
+export type ResultEntry = BestElevenResultEntry;
 
 @Component({
   selector: 'app-best-eleven',
@@ -33,9 +29,9 @@ export interface ResultEntry {
 })
 export class BestElevenComponent {
   private playerService = inject(PlayerService);
+  private bestElevenState = inject(BestElevenStateService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private readonly STORAGE_KEY = 'best_xi_marked_players';
 
   protected players = toSignal(this.playerService.players$, { initialValue: [] as Player[] });
   protected roles = this.playerService.roles;
@@ -53,14 +49,14 @@ export class BestElevenComponent {
     [...new Set((this.formation() ?? []).map(s => s.row))].sort((a, b) => a - b)
   );
 
-  selectedRoles = signal<(string | null)[]>(new Array(11).fill(null));
-  lockedPlayers = signal<(number | null)[]>(new Array(11).fill(null));
-  result = signal<ResultEntry[] | null>(null);
-  markedPlayerUids = signal<Set<number>>(new Set());
-  positionRestriction = signal(false);
-  searchQuery = signal('');
-  sortColumn = signal<'name' | 'position' | null>(null);
-  sortDirection = signal<'asc' | 'desc'>('asc');
+  selectedRoles = this.bestElevenState.selectedRoles;
+  lockedPlayers = this.bestElevenState.lockedPlayers;
+  result = this.bestElevenState.result;
+  markedPlayerUids = this.bestElevenState.markedPlayerUids;
+  positionRestriction = this.bestElevenState.positionRestriction;
+  searchQuery = this.bestElevenState.searchQuery;
+  sortColumn = this.bestElevenState.sortColumn;
+  sortDirection = this.bestElevenState.sortDirection;
 
   // ── Modal state ──────────────────────────────────────────────────────────
 
@@ -215,48 +211,6 @@ export class BestElevenComponent {
   });
 
   constructor() {
-    const stored = localStorage.getItem(this.STORAGE_KEY);
-    let storedMarked: Set<number> | null = null;
-    if (stored) {
-      try {
-        storedMarked = new Set(JSON.parse(stored) as number[]);
-      } catch { /* ignore invalid stored data */ }
-    }
-
-    let prevPlayerUids = new Set<number>();
-    let initialized = false;
-
-    effect(() => {
-      const current = this.players();
-      if (current.length === 0) return;
-
-      const currentUids = new Set(current.map(p => p.uid));
-
-      if (!initialized) {
-        initialized = true;
-        if (storedMarked !== null) {
-          const intersected = new Set([...storedMarked].filter(uid => currentUids.has(uid)));
-          this.markedPlayerUids.set(intersected);
-        } else {
-          this.markedPlayerUids.set(new Set(currentUids));
-        }
-      } else {
-        const uidsDiffer =
-          currentUids.size !== prevPlayerUids.size ||
-          [...currentUids].some(uid => !prevPlayerUids.has(uid));
-        if (uidsDiffer) {
-          this.markedPlayerUids.set(new Set(currentUids));
-        }
-      }
-
-      prevPlayerUids = currentUids;
-    });
-
-    effect(() => {
-      const marked = this.markedPlayerUids();
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify([...marked]));
-    });
-
     effect(() => {
       if (this.paramMap() && !this.formation()) {
         this.router.navigate(['/best-eleven']);
@@ -265,26 +219,20 @@ export class BestElevenComponent {
 
     effect(() => {
       const f = this.formation();
+      const slug = this.formationSlug();
+      const players = this.players();
       if (f) {
-        this.selectedRoles.set(new Array(f.length).fill(null));
-        this.lockedPlayers.set(new Array(f.length).fill(null));
-        this.result.set(null);
+        untracked(() => this.bestElevenState.useFormation(slug, f.length, players));
       }
     });
   }
 
   toggleMark(uid: number): void {
-    const current = new Set(this.markedPlayerUids());
-    if (current.has(uid)) {
-      current.delete(uid);
-    } else {
-      current.add(uid);
-    }
-    this.markedPlayerUids.set(current);
+    this.bestElevenState.toggleMark(uid);
   }
 
   markAll(): void {
-    this.markedPlayerUids.set(new Set(this.players().map(p => p.uid)));
+    this.bestElevenState.markAll(this.players());
   }
 
   protected slotsInRow(row: number): { slot: FormationSlot; index: number }[] {
@@ -294,32 +242,19 @@ export class BestElevenComponent {
   }
 
   onToggleRestriction(): void {
-    this.positionRestriction.update(v => !v);
-    this.result.set(null);
+    this.bestElevenState.togglePositionRestriction();
   }
 
   protected onRoleChange(slotIndex: number, roleName: string | null): void {
-    const roles = [...this.selectedRoles()];
-    roles[slotIndex] = roleName;
-    this.selectedRoles.set(roles);
-    if (roleName === null && this.lockedPlayers()[slotIndex] !== null) {
-      const locks = [...this.lockedPlayers()];
-      locks[slotIndex] = null;
-      this.lockedPlayers.set(locks);
-    }
-    this.result.set(null);
+    this.bestElevenState.setRole(slotIndex, roleName);
   }
 
   protected onLockChange(slotIndex: number, playerUid: number | null): void {
-    const current = [...this.lockedPlayers()];
-    current[slotIndex] = playerUid;
-    this.lockedPlayers.set(current);
-    this.result.set(null);
+    this.bestElevenState.setLockedPlayer(slotIndex, playerUid);
   }
 
-  protected reset(): void {
-    this.result.set(null);
-    this.lockedPlayers.set(new Array(this.formation()!.length).fill(null));
+  protected resetSettings(): void {
+    this.bestElevenState.resetSettings(this.players());
   }
 
   private readonly POSITION_GROUP_ORDER: Record<string, number> = {
@@ -340,16 +275,11 @@ export class BestElevenComponent {
   }
 
   protected onSearchInput(event: Event): void {
-    this.searchQuery.set((event.target as HTMLInputElement).value);
+    this.bestElevenState.setSearchQuery((event.target as HTMLInputElement).value);
   }
 
   protected toggleSort(col: 'name' | 'position'): void {
-    if (this.sortColumn() === col) {
-      this.sortDirection.update(d => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      this.sortColumn.set(col);
-      this.sortDirection.set('asc');
-    }
+    this.bestElevenState.toggleSort(col);
   }
 
   protected getScoreClass(score: number): string {
